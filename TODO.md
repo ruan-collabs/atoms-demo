@@ -143,14 +143,14 @@
 
 ## T-012 | 依据避坑指南核查Railway部署并安全推送GitHub
 
-- 状态：进行中
+- 状态：已完成
 - 阶段：部署
 - 优先级：P0
 - 验收条件：完整读取指南红线，检查部署与Mock/凭证泄漏，确定仓库和分支，仅推送必要源码并回读commit证据，不执行Railway部署
 - 依赖：无
 - 替代关系：无
-- 执行证据：待补充
-- 变更说明：首次登记
+- 执行证据：docs/GITHUB_DELIVERY.md; docs/PREDEPLOY_CHECKLIST.md; https://github.com/ruan-collabs/atoms-demo/commit/951819e07f685286a2da4d73546da18e73591b7c; https://github.com/ruan-collabs/atoms-demo/actions/runs/45317051622
+- 变更说明：2026-11-24：公开仓库main已推送94份审核源码；远端ZIP SHA256逐文件一致；本地70后端/11前端/生产build与GitHub CI含Docker镜像build成功；Railway未部署
 - 最后更新：2026-11-24
 
 <!-- 待办由守门器追加到此处 -->

@@ -17,7 +17,7 @@ React + TypeScript + Vite / FastAPI Python3.11 / PostgreSQL / 独立后台Worker
 
 本机启用用户明确授权的开发Mock登录、模型连接及模型fixture。Mock登录不是Google/邮箱身份验证；Mock产物不是AI模型生成。数据库、Worker、事务、加密、构建保存、浏览器真实运行与发布指针不是Mock。真实模型路径使用用户加密保存的Key，仅调用绑定允许HTTPS供应商；失败不会自动切Mock或平台Key。
 
-**本地Mock闭环通过不等于真实生产P0的45条验收全部通过。** 真实Google/SMTP、真实模型上游、生产密钥治理、DNS/TLS、Railway部署尚未配置，清单见 docs/MOCK_REGISTER.md。自测证据见 docs/SELF_TEST.md 和 docs/evidence/，HTML可视报告在 artifacts/Atoms自测报告.html。
+**本地Mock闭环通过不等于真实生产P0的45条验收全部通过。** 真实Google/SMTP、真实模型上游、生产密钥治理、DNS/TLS、Railway部署尚未配置，清单见 docs/MOCK_REGISTER.md。自测说明见 docs/SELF_TEST.md；原始浏览器证据和HTML报告仅本地保留，不公开提交。当前GitHub CI单测、前端build与Docker镜像build通过，详见 docs/GITHUB_DELIVERY.md；真实生产链路仍未验收。
 
 ## 本地运行
 

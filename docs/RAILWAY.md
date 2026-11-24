@@ -39,6 +39,6 @@
 
 ## 当前真实状态
 
-本地五个进程和真实Postgres已启动并自测。未在Railway账号创建服务、未推送GitHub、未配置域名或SecretManager、未做公网HTTPS访问。Docker配置和GitHub CI已备，当前机器没有Docker runtime，Docker真实镜像build/run未实测；CI尚未远端运行。
+源码已推送公开GitHub仓库，源码提交951819e，GitHub Actions运行45317051622成功（后端、前端和Docker镜像build）。本地服务已自测；尚未在Railway账号创建服务、未配置DNS/TLS或生产SecretManager，Docker镜像run与真实公网生产链路尚未验收。仅镜像build成功不能证明部署后可用。详见GITHUB_DELIVERY.md。
 
 不要把开发Mock或localhost链接作为已上线证据。用户本轮授权不二次确认，因此人工配置卡点记录后继续开发，不申请真实凭证或创建付费资源。
