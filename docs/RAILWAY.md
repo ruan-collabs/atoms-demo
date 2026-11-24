@@ -27,7 +27,7 @@ Mock无真实Key，仅fixture标记；后台仅消费Mock任务，不需要生�
 - GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET：真实OAuth配置，仅Platform；callback为PUBLIC_ORIGIN/api/auth/google/callback，详情见GOOGLE_LOGIN.md。
 - MAIL_MODE=smtp（配置发件人与TLS SMTP凭证）或disabled（仅邮箱不可用，Google可独立使用）；禁止file。
 - MODEL_ALLOWED_ORIGINS：精确HTTPS服务目标允许名单；默认OpenAI/DeepSeek。服务端DNS公共IP与TLS SNI绑定，不跟随重定向、不读取环境代理。
-- RUN_BUDGET_SECONDS=180，LEASE_SECONDS=60（可选）。
+- RUN_BUDGET_SECONDS=420，LEASE_SECONDS=60（可选）。DeepSeek首代码限额GENERATION_MAX_TOKENS=16384、重试GENERATION_RETRY_MAX_TOKENS=32768；全run最多追加3次自动重试，预算不足提前停止，未知已发送上游结果不自动重放。
 
 当前代码采用AESGCM认证加密，AAD绑定owner/config/version；本地文件主密钥是开发替代，不是KMS。生产使用环境Secret的成熟算法路径已实现，但独立KMS身份、轮换、审计与备份删除治理尚需实际部署验证，记录为上线阻塞。
 

@@ -50,6 +50,9 @@ async def guarded_call(run_id,token,call):
         await asyncio.gather(task,return_exceptions=True)
         raise
 
+async def retry_delay(seconds):
+    await asyncio.sleep(seconds)
+
 async def execute(run_id,token):
     key=''
     try:
@@ -69,6 +72,28 @@ async def execute(run_id,token):
             config_snapshot=config
         candidate_for_repair=None
         plan=''
+        with SessionLocal() as db:
+            prior,_=valid_job(db,run_id,token)
+            retry_count=sum(1 for event in (prior.events or []) if event.get('auto_retry'))
+        retry_limit=1 if provider=='mock' else 3
+        def log_result(stage,exc):
+            print(json.dumps({'event':'generation_attempt_failed','run':run_id,'stage':stage,'retry_count':retry_count,
+                'category':exc.category,'finish_reason':exc.finish_reason,'http_status':exc.http_status,
+                'received_bytes':exc.received_bytes},ensure_ascii=True),flush=True)
+        async def retry_after(stage,exc):
+            nonlocal retry_count
+            log_result(stage,exc)
+            if exc.category not in ('truncated','artifact','http_retry','connect') or retry_count>=retry_limit:raise exc
+            retry_count+=1
+            delay=2**(retry_count-1)
+            with SessionLocal() as db:
+                r,_=valid_job(db,run_id,token)
+                detail=f'自动重试 {retry_count}/{retry_limit}：{str(exc)}；{delay}秒后再次尝试（可能计费）'
+                add_event(r,stage,detail)
+                events=list(r.events);events[-1]={**events[-1],'auto_retry':retry_count};r.events=events
+                db.commit()
+            # Backoff remains cancellable and renews the lease; no detached retry job.
+            await guarded_call(run_id,token,retry_delay(delay))
         pending=''
         last_flush=0.0
         async def on_delta(delta, force=False):
@@ -99,9 +124,13 @@ async def execute(run_id,token):
             system='You build self-contained single-page HTML/CSS/JS applications. No external resources, no remote fetch, no server code, payments or sensitive services. Use inline CSS/JS. Never include credentials. Use persistent JSON application data and show failures. Preserve existing storage schema on style iterations. Output complete <!doctype html> document, not Markdown.'
             if settings.application_sandbox:
                 system += ' Use window.atomsStorage only (provided by the sandbox): getItem("atoms-app:data:v1") returns JSON string or null; await atomsStorage.setItem("atoms-app:data:v1", JSON.stringify(objectOrArray)) resolves only after durable browser save. Initialize from getItem, validate JSON. Every mutation must await setItem before updating UI. No localStorage/sessionStorage/indexedDB/cookies. Use addEventListener; no inline onclick or other event attributes. Include head and classic inline scripts. Data must be JSON object or array under 200KB. Do not define atomsStorage yourself.'
+            system += ' Keep implementation concise and complete; avoid verbose comments or decorative duplication. Return only one full HTML document with closing body/html tags.'
             if stage=='planning':
                 if any(term in prompt for term in ('真实支付','真实医疗','多人共享数据库','真实银行')):raise ProviderError('P0仅支持本地单页应用，不支持此真实敏感服务需求','scope')
-                msgs=[{'role':'system','content':'Return concise JSON with scope, components, interactions, storage and acceptance. Only support local single-page apps. Do not expose hidden reasoning.'},{'role':'user','content':prompt}]
+                planning_system='Return concise JSON with scope, components, interactions, storage and acceptance. Only support local single-page apps. Do not expose hidden reasoning. Keep it under 700 tokens.'
+                if settings.application_sandbox:
+                    planning_system+=' Use the platform atomsStorage.getItem("atoms-app:data:v1") and async setItem of JSON object/array only; no localStorage/sessionStorage/indexedDB or alternate key. Mutations update UI only after saved acknowledgement. This platform constraint overrides a generic local-save request.'
+                msgs=[{'role':'system','content':planning_system},{'role':'user','content':prompt}]
             else:
                 msgs=[{'role':'system','content':system}]
                 if base_html:msgs.append({'role':'user','content':'Existing application (preserve behavior and storage):\n'+base_html})
@@ -110,30 +139,37 @@ async def execute(run_id,token):
                 msgs.append({'role':'user','content':prompt+(('\nFix validation issue: '+repair) if repair else '')})
             if stage == 'planning':
                 return await guarded_call(run_id,token,completion(config_snapshot,key,msgs,max_tokens=1024))
-            value=await guarded_call(run_id,token,stream_completion(config_snapshot,key,msgs,on_delta))
+            max_tokens=(settings.generation_retry_max_tokens if retry_count else settings.generation_max_tokens) if provider=='deepseek' else 8192
+            value=await guarded_call(run_id,token,stream_completion(config_snapshot,key,msgs,on_delta,max_tokens=max_tokens))
             await on_delta('',force=True)
             return value
         async with asyncio.timeout(settings.run_budget_seconds):
             transition(run_id,token,'planning','开始范围与交互规划'+('（开发Mock）' if provider=='mock' else ''))
-            plan=await call('planning')
+            while True:
+                try:plan=await call('planning');break
+                except ProviderError as exc:await retry_after('planning',exc)
             with SessionLocal() as db:
                 run,_=valid_job(db,run_id,token)
                 db.add(Message(project_id=run.project_id,idempotency_key=__import__('hashlib').sha256((run.id+':plan').encode()).hexdigest()[:36],role='assistant',content='规划助手'+(' [Mock]' if provider=='mock' else '')+'\n'+plan));db.commit()
             transition(run_id,token,'generating','在当前成功构建基础上生成' if base_html else '生成完整应用代码')
-            candidate=parse_output(await call('generating'))
-            transition(run_id,token,'validating','检查HTML入口、脚本语法、外部资源与凭证泄漏')
             validate=validate_html
             if settings.application_sandbox and provider!='mock':
                 from app.api.application_sandbox import sandbox_validate
                 validate=sandbox_validate
-            try:validation=await asyncio.to_thread(validate,candidate,key)
-            except ProviderError as exc:
-                if exc.category=='leak':raise
-                candidate_for_repair=candidate
-                transition(run_id,token,'generating','一次修复尝试（可能再次计费，不无限重试）')
-                candidate=parse_output(await call('generating',repair=str(exc)))
-                transition(run_id,token,'validating','修复后重新校验')
-                validation=await asyncio.to_thread(validate,candidate,key)
+            repair=None
+            while True:
+                candidate=None
+                try:
+                    candidate=parse_output(await call('generating',repair=repair))
+                    transition(run_id,token,'validating','检查HTML入口、脚本语法、外部资源与凭证泄漏')
+                    validation=await asyncio.to_thread(validate,candidate,key)
+                    break
+                except ProviderError as exc:
+                    if candidate is not None:candidate_for_repair=candidate
+                    # Never execute or stitch incomplete streams; request a fresh full document.
+                    repair='Previous output hit length limit. Produce a concise COMPLETE HTML document, preserve required behavior and storage.' if exc.category=='truncated' else str(exc)
+                    await retry_after('generating',exc)
+                    transition(run_id,token,'generating',f'自动重试 {retry_count}/{retry_limit}：重新生成并修复完整应用')
             with SessionLocal() as db:
                 run,_=valid_job(db,run_id,token)
                 run.candidate={'html':candidate,'validation':validation,'mock':provider=='mock'}
@@ -141,6 +177,9 @@ async def execute(run_id,token):
             commit_candidate(run_id,token)
     except JobStopped:pass
     except (ProviderError,CredentialError,TimeoutError) as exc:
+        print(json.dumps({'event':'generation_failed','run':run_id,'category':getattr(exc,'category','budget' if isinstance(exc,TimeoutError) else 'credential'),
+            'finish_reason':getattr(exc,'finish_reason',None),'http_status':getattr(exc,'http_status',None),
+            'received_bytes':getattr(exc,'received_bytes',0)},ensure_ascii=True),flush=True)
         with SessionLocal() as db:
             run=db.scalar(select(GenerationRun).where(GenerationRun.id==run_id).with_for_update())
             if run and run.status not in TERMINAL:

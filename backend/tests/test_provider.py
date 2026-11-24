@@ -29,7 +29,7 @@ def test_deepseek_official_request_and_content_only(monkeypatch):
     assert captured['json']['stream'] is False
     assert not captured['options']['trust_env'] and not captured['options']['follow_redirects']
 
-@pytest.mark.parametrize('code,category',[(400,'request'),(401,'auth'),(402,'balance'),(403,'auth'),(429,'rate_limit'),(503,'upstream'),(302,'destination')])
+@pytest.mark.parametrize('code,category',[(400,'request'),(401,'auth'),(402,'balance'),(403,'auth'),(429,'http_retry'),(503,'http_retry'),(302,'destination')])
 def test_deepseek_errors_do_not_echo_raw_payload(monkeypatch,code,category):
     monkeypatch.setattr(httpx,'AsyncClient',response_client(httpx.Response(code,text='private upstream details'),{}))
     with patch('socket.getaddrinfo',return_value=[(2,1,6,'',('8.8.8.8',443))]):

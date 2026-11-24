@@ -9,8 +9,10 @@ import httpx
 from app.config import settings
 
 class ProviderError(Exception):
-    def __init__(self,message,category='provider'):
+    def __init__(self,message,category='provider',*,finish_reason=None,http_status=None,received_bytes=0):
         super().__init__(message);self.category=category
+        self.finish_reason=finish_reason if finish_reason in ('length','stop','content_filter','tool_calls') else None
+        self.http_status=http_status;self.received_bytes=received_bytes
 
 def resolve_target(base_url):
     try:
@@ -45,20 +47,15 @@ async def completion(config,key,messages,timeout=45,max_tokens=8192):
             response=await client.post(url,headers={'Host':hostname,'Authorization':'Bearer '+key,'Content-Type':'application/json'},
                 extensions={'sni_hostname':hostname},json=payload)
         code=response.status_code
-        if code==400:raise ProviderError('模型请求参数无效，请检查模型ID与接口格式','request')
-        if code in (401,403):raise ProviderError('模型Key或权限无效，请重新配置','auth')
-        if code==402:raise ProviderError('模型账户余额不足','balance')
-        if code==404:raise ProviderError('模型或接口不存在，请重新配置','auth')
-        if code==429:raise ProviderError('模型请求受限，请稍后手动重试','rate_limit')
-        if 300<=code<400:raise ProviderError('拒绝供应商重定向','destination')
-        if code!=200:raise ProviderError(f'上游服务错误（HTTP {code}）','upstream')
+        check_status(code)
         if len(response.content)>2_000_000:raise ProviderError('上游产物超过大小限制','artifact')
         data=response.json()
         if not isinstance(data,dict) or not isinstance(data.get('choices'),list) or not data['choices'] or not isinstance(data['choices'][0],dict):
             raise ProviderError('上游响应结构异常','network')
         choice=data['choices'][0]
         if choice.get('finish_reason') not in (None,'stop'):
-            raise ProviderError('模型输出被截断、拒绝或中断，未保存候选','artifact')
+            reason=choice.get('finish_reason')
+            raise ProviderError('模型输出达到长度上限，未保存不完整候选' if reason=='length' else '模型拒绝或中断输出，未保存候选','truncated' if reason=='length' else 'refusal',finish_reason=reason)
         message=choice.get('message')
         if not isinstance(message,dict):raise ProviderError('上游响应结构异常','network')
         value=message.get('content')
@@ -66,7 +63,9 @@ async def completion(config,key,messages,timeout=45,max_tokens=8192):
         if key in value:raise ProviderError('产物疑似包含凭证，已阻止保存','leak')
         return value
     except ProviderError:raise
-    except httpx.TimeoutException:raise ProviderError('模型请求超时；不自动重复计费请求','timeout') from None
+    except (httpx.ConnectError,httpx.ConnectTimeout,httpx.PoolTimeout):
+        raise ProviderError('模型连接未建立，尚未发送生成请求','connect') from None
+    except httpx.TimeoutException:raise ProviderError('模型请求超时；上游结果未知，不自动重复计费','timeout') from None
     except (httpx.HTTPError,ValueError,IndexError,KeyError):raise ProviderError('模型网络、TLS或响应结构异常','network') from None
 
 
@@ -74,7 +73,8 @@ def check_status(code):
     if code == 400: raise ProviderError('模型请求参数无效，请检查模型ID与接口格式', 'request')
     if code in (401, 403, 404): raise ProviderError('模型Key、权限或模型无效，请重新配置', 'auth')
     if code == 402: raise ProviderError('模型账户余额不足', 'balance')
-    if code == 429: raise ProviderError('模型请求受限，请稍后手动重试', 'rate_limit')
+    if code in (429,500,502,503,504):
+        raise ProviderError(f'模型服务暂时不可用（HTTP {code}）','http_retry',http_status=code)
     if 300 <= code < 400: raise ProviderError('拒绝供应商重定向', 'destination')
     if code != 200: raise ProviderError(f'上游服务错误（HTTP {code}）', 'upstream')
 
@@ -138,7 +138,7 @@ async def stream_completion(config, key, messages, on_delta, timeout=60, max_tok
                     choice = choices[0]
                     delta = choice.get('delta', {})
                     if not isinstance(delta, dict) or delta.get('refusal') or delta.get('tool_calls'):
-                        raise ProviderError('模型未返回有效应用内容', 'artifact')
+                        raise ProviderError('模型未返回有效应用内容', 'refusal')
                     value = delta.get('content') or ''
                     if not isinstance(value, str): raise ProviderError('上游内容格式异常', 'network')
                     full += value
@@ -146,13 +146,16 @@ async def stream_completion(config, key, messages, on_delta, timeout=60, max_tok
                     await emit(value)
                     reason = choice.get('finish_reason')
                     if reason is not None:
-                        if reason != 'stop': raise ProviderError('模型输出被截断、拒绝或中断，未保存候选', 'artifact')
+                        if reason != 'stop':
+                            raise ProviderError('模型输出达到长度上限，未保存不完整候选' if reason=='length' else '模型拒绝或中断输出，未保存候选', 'truncated' if reason=='length' else 'refusal',finish_reason=reason,received_bytes=len(full.encode()))
                         finished = True
         if not (finished and done and full.strip()):
             raise ProviderError('模型流中断；不自动重复计费请求', 'network')
         await emit('', flush=True)
         return full
     except ProviderError: raise
-    except httpx.TimeoutException: raise ProviderError('模型请求超时；不自动重复计费请求', 'timeout') from None
+    except (httpx.ConnectError,httpx.ConnectTimeout,httpx.PoolTimeout):
+        raise ProviderError('模型连接未建立，尚未发送生成请求','connect') from None
+    except httpx.TimeoutException: raise ProviderError('模型请求超时；上游结果未知，不自动重复计费', 'timeout') from None
     except (httpx.HTTPError, ValueError, TypeError, KeyError, AttributeError):
         raise ProviderError('模型网络、TLS或流式响应结构异常', 'network') from None

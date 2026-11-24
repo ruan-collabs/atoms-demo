@@ -82,6 +82,19 @@ def test_standalone_key_prefix_still_blocked(monkeypatch):
     assert error.value.category=='leak'
 
 
+def test_length_error_has_sanitized_metadata(monkeypatch):
+    mock_stream(monkeypatch,frames(['partial'],finish='length'),{})
+    with pytest.raises(ProviderError) as error:run_stream()
+    assert error.value.category=='truncated'
+    assert error.value.finish_reason=='length' and error.value.received_bytes==7
+
+
+def test_filter_refusal_not_retryable(monkeypatch):
+    mock_stream(monkeypatch,frames(['partial'],finish='content_filter'),{})
+    with pytest.raises(ProviderError) as error:run_stream()
+    assert error.value.category=='refusal'
+
+
 def test_extract_single_html_from_explanation():
     from app.services.artifacts import parse_output
     html='<!doctype html><html><head></head><body></body></html>'

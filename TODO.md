@@ -395,14 +395,26 @@
 
 ## T-033 | 移除预览加载成功后的固定状态提示并上线
 
-- 状态：待验收
+- 状态：已完成
 - 阶段：交互
 - 优先级：P1
 - 验收条件：真实及Mock预览、独立预览、公开应用加载成功后无固定提示或空白状态栏；加载中与失败提示保留，隔离与存储逻辑不变；前端测试构建、GitHub同步与Railway界面回读
 - 依赖：无
 - 替代关系：无
-- 执行证据：frontend/src/components/preview-status.test.ts; frontend/src/components/ApplicationPreview.tsx; frontend/src/components/MockPreview.tsx; frontend/src/pages/Editor.tsx
-- 变更说明：2026-11-24：真实及Mock成功后清空状态并不渲染占位栏，独立源成功提示同步移除；加载中/运行失败/存储损坏提示保留。32前端测试与build通过，待GitHub同步和Railway回读
+- 执行证据：frontend/src/components/preview-status.test.ts; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://github.com/ruan-collabs/atoms-demo/commit/5a81c12b07b0c0cef6ab5d6d5fa9f4ad2ae9d178; https://github.com/ruan-collabs/atoms-demo/actions/runs/45416749606
+- 变更说明：2026-11-24：成功提示与占位节点已统一移除，加载和运行/存储错误保留；32前端测试/build及CI通过。Railway已部署，真实编辑器、独立与公开预览无提示且原记录保留，隔离不变，无模型调用
+- 最后更新：2026-11-24
+
+## T-034 | 排查最近生成失败并增加最多三次有界自动重试
+
+- 状态：进行中
+- 阶段：修复上线
+- 优先级：P0
+- 验收条件：回读最近两次失败项目与Railway Worker/平台日志定位原因；修复输出截断/契约问题并测试；首次失败后最多3次有界自动重试，退避、取消/配置版本/预算/租约有效，安全拒绝不降级、未知计费不盲重放；同步源码并上线回读
+- 依赖：无
+- 替代关系：无
+- 执行证据：backend/tests/test_generation_retry.py; backend/tests/test_stream_provider.py; https://atoms-demo-production-57bed089.up.railway.app/projects/ab065566-2556-4c99-8006-b7c9a33e3e33
+- 变更说明：2026-11-24：Railway平台/Worker启动正常无崩溃；失败笔记项目两次规划与末次25秒截断错误已回读。代码8K上限与localStorage规划冲突已修复；3次共享有界重试/脱敏原因日志实现，137后端32前端/build/迁移检查通过，准备上线与有限真实重试
 - 最后更新：2026-11-24
 
 <!-- 待办由守门器追加到此处 -->

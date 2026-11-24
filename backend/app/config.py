@@ -35,7 +35,9 @@ class Settings(BaseSettings):
     preview_origin: str = 'http://localhost:8001'
     app_origin: str = 'http://localhost:8002'
     worker_poll_seconds: float = 0.5
-    run_budget_seconds: int = 180
+    run_budget_seconds: int = 420
+    generation_max_tokens: int = 16384
+    generation_retry_max_tokens: int = 32768
     lease_seconds: int = 60
     mock_delay_seconds: float = 1.0
     voice_enabled: bool = False

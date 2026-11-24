@@ -115,7 +115,7 @@ def test_failure_does_not_overwrite_build(client,login):
 
 def test_invalid_artifact_one_repair_then_fail(client,login):
     login(client);pid=create(client,'[mock:invalid]');finish();s=snapshot(client,pid)
-    assert s['run']['status']=='failed' and not s['build'];assert len([e for e in s['run']['events'] if '修复' in e['detail']])==2
+    assert s['run']['status']=='failed' and not s['build'];assert len([e for e in s['run']['events'] if e.get('auto_retry')])==1
 
 def test_concurrency_gate_and_retry_message_not_duplicated(client,login):
     login(client);pid=create(client,'[mock:fail]')
