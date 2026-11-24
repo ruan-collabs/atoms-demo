@@ -12,7 +12,7 @@ export function ApplicationPreview({projectId,buildId,ownerId,publicView=false,r
    if(event.source!==frame.current?.contentWindow||event.origin!=='null'||!event.data||event.data.channel!==channel||event.data.buildId!==buildId)return;
    const message=event.data;
    if(message.type==='init-request'&&!initialized){initialized=true;try{const value=localStorage.getItem(storageKey);if(value!==null&&!validApplicationData(value))throw Error();send({type:'init',value});}catch{send({type:'init',value:null,error:true});setStatus('存储不可用或原数据损坏，未清除原数据');}}
-   if(message.type==='ready'&&initialized){ready=true;setStatus('预览已加载 · 无平台权限 · 业务行为待验证');}
+   if(message.type==='ready'&&initialized){ready=true;setStatus(current=>current==='沙箱加载中…'?'':current);}
    if(message.type==='error')setStatus('应用运行错误；请修改需求或查看代码');
    if(message.type==='save'&&initialized){
     let ok=false;
@@ -28,5 +28,5 @@ export function ApplicationPreview({projectId,buildId,ownerId,publicView=false,r
   return()=>{window.removeEventListener('message',listen);clearTimeout(timer);};
  },[channel,buildId,storageKey]);
  const src=`/api/application-sandbox/${projectId}/frame?channel=${encodeURIComponent(channel)}&build_id=${buildId}${publicView?'&public_view=true':''}`;
- return <><span className="preview-status tiny" role="status">{status}</span><iframe key={channel} title="生成应用预览" ref={frame} src={src} sandbox="allow-scripts allow-forms" referrerPolicy="no-referrer" className="app-frame"/></>;
+ return <>{status&&<span className="preview-status tiny" role="status">{status}</span>}<iframe key={channel} title="生成应用预览" ref={frame} src={src} sandbox="allow-scripts allow-forms" referrerPolicy="no-referrer" className="app-frame"/></>;
 }

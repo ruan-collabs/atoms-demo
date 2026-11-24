@@ -389,8 +389,20 @@
 - 验收条件：Railway path包装入口；生成HTML在opaque iframe运行无same-origin；专用受限JSON存储桥ACK后保存、owner/project/public隔离；不传会话Key平台API、Mock仍严格fixture；安全及真实生成交互回归，部署证据分别记录
 - 依赖：无
 - 替代关系：无
-- 执行证据：docs/APPLICATION_SANDBOX_ACCEPTANCE.md; https://atoms-demo-production-57bed089.up.railway.app/apps/03d682c4-fdcd-490f-8fb4-6b69c98eb154
-- 变更说明：2026-11-24：真实生成任务新增完成删除刷新、主题迭代及公开稳定URL更新通过；继续容器重部署恢复核验，第二类真实需求和存储失败/对抗路径仍待验
+- 执行证据：docs/APPLICATION_SANDBOX_ACCEPTANCE.md; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://atoms-demo-production-57bed089.up.railway.app/apps/03d682c4-fdcd-490f-8fb4-6b69c98eb154
+- 变更说明：2026-11-24：真实生成交互持久化、主题迭代公开更新、Platform/Worker重部署后会话/配置元信息/构建2/消息/私人公开记录恢复通过；第二类真实应用、保存失败/对抗安全、无痕手机与生产治理仍待验
+- 最后更新：2026-11-24
+
+## T-033 | 移除预览加载成功后的固定状态提示并上线
+
+- 状态：待验收
+- 阶段：交互
+- 优先级：P1
+- 验收条件：真实及Mock预览、独立预览、公开应用加载成功后无固定提示或空白状态栏；加载中与失败提示保留，隔离与存储逻辑不变；前端测试构建、GitHub同步与Railway界面回读
+- 依赖：无
+- 替代关系：无
+- 执行证据：frontend/src/components/preview-status.test.ts; frontend/src/components/ApplicationPreview.tsx; frontend/src/components/MockPreview.tsx; frontend/src/pages/Editor.tsx
+- 变更说明：2026-11-24：真实及Mock成功后清空状态并不渲染占位栏，独立源成功提示同步移除；加载中/运行失败/存储损坏提示保留。32前端测试与build通过，待GitHub同步和Railway回读
 - 最后更新：2026-11-24
 
 <!-- 待办由守门器追加到此处 -->
