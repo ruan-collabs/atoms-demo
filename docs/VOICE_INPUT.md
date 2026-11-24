@@ -20,7 +20,7 @@ Pipecat WebSocket运输、PCM serializer、PipelineWorker保留；默认兼容�
 
 ## 链路与安全
 
-浏览器用户主动点击发送按钮旁的麦克风图标→直接申请麦克风（无业务二次确认，首次浏览器权限仍保留）→AudioWorklet单声道PCM16/16k→同源认证WS→Pipecat→官方火山双向流式→全量替换临时文字/最终确认→填入Query，用户手动发送。图标title及输入框下方状态持续告知供应商、费用和不保存原音频；录音时图标高亮，再点停止。不接TTS或自动LLM生成，不做实时播报。
+浏览器用户主动点击发送按钮旁的麦克风图标→直接申请麦克风（无业务二次确认，首次浏览器权限仍保留）→AudioWorklet单声道PCM16/16k→同源认证WS→Pipecat→官方火山双向流式→全量替换临时文字/最终确认→填入Query，用户手动发送。空闲时不显示语音说明，图标title仅为操作名称；录音、连接、收尾和错误提示按状态显示，录音时图标高亮，再点停止。不接TTS或自动LLM生成，不做实时播报。
 
 - 精确Origin、平台登录、每owner一连接、总并发限额、每包及总音频上限、最长120秒。
 - 200ms分包；供应商固定URL，DNS全部公共IP验证、TCP固定IP、原Host和TLS SNI、不读取环境代理、不跟重定向。
@@ -36,4 +36,4 @@ Pipecat WebSocket运输、PCM serializer、PipelineWorker保留；默认兼容�
 
 火山源码8b0c413已推GitHub，固定ZIP116份文件与当时本地一致，CI https://github.com/ruan-collabs/atoms-demo/actions/runs/45369863718 成功。Railway部署Active，用户填入的四项语音变量已应用，/api/voice/status.enabled=true、provider=pipecat-volcengine，页面按钮可用。用户接管进行短录音，交回后Query变为新的测试文本且麦克风/发送恢复；执行器未直接观察interim/final事件，不能只凭输入框文本判定全部真实流式与停止资源验收通过。T-026/T-021保持待验收。
 
-T-027用户进一步要求发送按钮旁纯麦克风图标，去除业务二次确认；本地修改与99后端/21前端/构建通过，准备部署回读。未自动录音，不移除浏览器权限，不自动发送Query。
+T-027用户进一步要求发送按钮旁纯麦克风图标，去除业务二次确认；99后端/21前端/构建通过，源码7485c4fa458931767f5799e0de5d7c4a8e0822aa已部署Railway Active，固定ZIP117份文件与当时本地一致，CI https://github.com/ruan-collabs/atoms-demo/actions/runs/45372756267 成功。公网工作台与本地已登录编辑器DOM几何核验：Mic紧邻发送左侧、同排、10px间距、无按钮文字；点击直接申请麦克风且不调用confirm由React组件测试断言（模拟权限拒绝，不做本轮自动录音）。未移除浏览器首次权限，录音高亮、停止收尾锁定及提示保留，不自动发送Query。最终收尾文档仅本地追加，不为说明再次部署。

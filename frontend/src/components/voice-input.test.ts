@@ -15,6 +15,7 @@ describe('voice icon interaction',()=>{
   const status=vi.fn(),container=document.createElement('div');document.body.append(container);root=createRoot(container);
   await act(async()=>{root!.render(createElement(VoiceInput,{value:'',onChange:vi.fn(),onStatusChange:status}));});
   const button=container.querySelector('button')!;expect(button.textContent).toBe('');expect(button.querySelector('svg')).not.toBeNull();expect(button.disabled).toBe(false);
+  expect(status).toHaveBeenLastCalledWith('');expect(button.title).toBe('开始语音输入');
   await act(async()=>{button.click();});
   expect(request).toHaveBeenCalledOnce();expect(confirm).not.toHaveBeenCalled();expect(status).toHaveBeenCalledWith('mic test rejected');confirm.mockRestore();
  });

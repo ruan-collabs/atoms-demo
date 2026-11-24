@@ -51,8 +51,8 @@ export function VoiceInput({value,onChange,disabled=false,onListeningChange,onSt
    await context.resume();
   }catch(e){setError(errorText(e));release();}
  };
- const message=error||(!user?'登录后可用语音输入':finishing?'正在接收最后的转写结果…':starting?'正在连接麦克风…':listening?(partial?'实时转写中…再次点击麦克风停止':'正在聆听…再次点击麦克风停止'):status?.enabled?`点击麦克风即开始；音频发送至${status.provider_name??'语音服务'}转写，可能计费，不保存原音频、不自动发送需求。`:status?.message||'读取语音配置…');
+ const message=error||(!user?'登录后可用语音输入':finishing?'正在接收最后的转写结果…':starting?'正在连接麦克风…':listening?(partial?'实时转写中…再次点击麦克风停止':'正在聆听…再次点击麦克风停止'):status?.enabled?'':status?.message||'读取语音配置…');
  useEffect(()=>{onStatusChange?.(message);},[message,onStatusChange]);
  const label=finishing?'语音收尾中':listening?'停止语音输入':starting?'取消语音连接':'开始语音输入';
- return <button type="button" className={`icon-button voice-button${listening?' is-listening':''}${starting||finishing?' is-processing':''}`} disabled={finishing||disabled||!user||!status?.enabled} onClick={()=>listening||starting?stop():void start()} aria-label={label} aria-pressed={listening||starting} title={message}><Mic size={18}/></button>;
+ return <button type="button" className={`icon-button voice-button${listening?' is-listening':''}${starting||finishing?' is-processing':''}`} disabled={finishing||disabled||!user||!status?.enabled} onClick={()=>listening||starting?stop():void start()} aria-label={label} aria-pressed={listening||starting} title={message||label}><Mic size={18}/></button>;
 }
