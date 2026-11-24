@@ -63,6 +63,10 @@ class Settings(BaseSettings):
         return self.public_origin + '/api/auth/google/callback'
 
     @property
+    def secure_cookies(self):
+        return self.production or urlsplit(self.public_origin).scheme == 'https'
+
+    @property
     def production(self):
         return self.app_env == 'production'
 
@@ -87,6 +91,8 @@ class Settings(BaseSettings):
             raise ValueError('Google OAuth requires both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET')
         if self.google_enabled:
             parts = urlsplit(self.public_origin)
+            if parts.scheme == 'https' and (len(self.app_secret) < 32 or self.app_secret.startswith('development')):
+                raise ValueError('HTTPS Google OAuth requires a stable random APP_SECRET of at least 32 characters')
             if not parts.netloc or parts.username or parts.password or parts.path or parts.query or parts.fragment:
                 raise ValueError('Google OAuth requires exact PUBLIC_ORIGIN without trailing slash')
             if parts.scheme != 'https' and not (not self.production and parts.scheme == 'http' and parts.hostname in ('localhost', '127.0.0.1')):

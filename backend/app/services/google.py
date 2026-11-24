@@ -20,7 +20,7 @@ class GoogleAuthError(Exception):
 
 async def exchange_code(code: str, verifier: str):
     try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=False, trust_env=False) as client:
             response = await client.post(TOKEN_URL, data={
                 'code': code, 'client_id': settings.google_client_id,
                 'client_secret': settings.google_client_secret,

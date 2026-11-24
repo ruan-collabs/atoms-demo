@@ -45,7 +45,15 @@ https://developers.google.com/identity/openid-connect/openid-connect?hl=id
 4. 退出并再次Google登录应复用原用户；拒绝授权、失效state、重放和错误签名不得创建登录态。
 5. 在Railway域名单独复测，localhost结果不代替生产回调验收。
 
-## 本轮验证边界
+## 最新真实联调进度（2026-11-24）
+
+用户已提供Web类型OAuth客户端JSON。仅脱敏核查，client_id/client_secret均存在，文件登记的本地5173与Railway实际HTTPS回调均精确匹配；不将原文件或字段值写进代码、聊天、日志或GitHub。未打开Google Cloud控制台，因此测试用户与同意页面状态以真正授权现场为准。
+
+调试前补强HTTPS演示模式的Cookie：平台会话与OAuth临时Cookie在PUBLIC_ORIGIN为https时也启用Secure，不依赖APP_ENV=production。Google授权码交换禁止读取环境代理，目标仍固定Google官方地址，不改变签名/state/nonce/PKCE校验。
+
+需要在Railway平台服务配置GOOGLE_CLIENT_ID和GOOGLE_CLIENT_SECRET，由用户在受保护变量界面亲自填入；同时把APP_SECRET配置为独立稳定随机至少32字符值；HTTPS Google登录在缺少安全APP_SECRET时启动拒绝，以撤销原开发会话但不删除项目。保持现有Mock演示开关，不切production，不导入任何身份或授权Token。配置后实际Google账号选择/同意授权也由用户完成，本轮不以自动化网络替身冒充真实登录。
+
+## 早期验证边界（凭证现已提供，真实授权仍待验）
 
 已新增数据库迁移及可执行OAuth代码。自动化回调测试模拟Google网络响应；ID token校验测试使用临时RSA签名，覆盖签名/issuer/audience/expiry/nonce/email验证。它们不是一次真实Google账号授权。
 目前没有你的Google OAuth Client配置，真实Google登录暂阻塞，界面不会把它标成可用。无需在此轮提供真实模型Key。

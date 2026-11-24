@@ -117,6 +117,48 @@ def test_google_exchange_failure_not_login(client,enabled,monkeypatch):
     assert 'google_failed' in r.headers['location']
     assert client.get('/api/auth/me').status_code==401
 
+def test_google_https_development_cookies_are_secure(client,enabled,monkeypatch):
+    monkeypatch.setattr(settings,'public_origin','https://demo.example.com')
+    r=client.post('/api/auth/google/start',json={'terms_accepted':True})
+    assert r.status_code==200
+    assert '; secure' in r.headers['set-cookie'].lower()
+    from app.api.auth import issue_session
+    from fastapi import Response
+    with SessionLocal() as db:
+        user=User(email='secure-google@example.com');db.add(user);db.flush()
+        response=Response();issue_session(db,user,response)
+        assert '; secure' in response.headers['set-cookie'].lower()
+        db.rollback()
+    assert settings.secure_cookies is True
+    monkeypatch.setattr(settings,'public_origin','http://localhost:5173')
+    assert settings.secure_cookies is False
+
+def test_google_exchange_uses_fixed_target_without_ambient_proxy(enabled,monkeypatch):
+    seen={}
+    class Reply:
+        status_code=200
+        def json(self):return {'id_token':'test-id-token'}
+    class Client:
+        def __init__(self,**kwargs):seen['options']=kwargs
+        async def __aenter__(self):return self
+        async def __aexit__(self,*args):pass
+        async def post(self,url,**kwargs):seen['url']=url;seen['data']=kwargs['data'];return Reply()
+    monkeypatch.setattr(google.httpx,'AsyncClient',Client)
+    import asyncio
+    assert asyncio.run(google.exchange_code('test-code','test-verifier'))=='test-id-token'
+    assert seen['options']['trust_env'] is False
+    assert seen['options']['follow_redirects'] is False
+    assert seen['url']==google.TOKEN_URL
+    assert seen['data']['code_verifier']=='test-verifier'
+    assert seen['data']['redirect_uri']=='http://localhost:5173/api/auth/google/callback'
+
+def test_google_https_refuses_default_session_secret():
+    from app.config import Settings
+    with pytest.raises(ValueError):
+        Settings(_env_file=None,public_origin='https://demo.example.com',google_client_id='fixture.apps.googleusercontent.com',google_client_secret='test-only-placeholder')
+    configured=Settings(_env_file=None,public_origin='https://demo.example.com',app_secret='x'*40,google_client_id='fixture.apps.googleusercontent.com',google_client_secret='test-only-placeholder')
+    assert configured.secure_cookies
+
 @pytest.fixture
 def signing(monkeypatch,enabled):
     key=rsa.generate_private_key(public_exponent=65537,key_size=2048)

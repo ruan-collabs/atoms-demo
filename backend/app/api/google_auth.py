@@ -32,7 +32,7 @@ def start(body: StartGoogle, request: Request, response: Response, db: Session =
     state, nonce, verifier = secrets.token_urlsafe(32), secrets.token_urlsafe(32), secrets.token_urlsafe(48)
     challenge = OAuthChallenge(state_hash=digest(state), nonce_hash=digest(nonce), browser_hash=digest(state+':'+verifier), expires_at=now()+timedelta(minutes=10))
     db.add(challenge);db.commit()
-    response.set_cookie(OAUTH_COOKIE, verifier, httponly=True, secure=settings.production, samesite='lax', max_age=600, path='/api/auth/google')
+    response.set_cookie(OAUTH_COOKIE, verifier, httponly=True, secure=settings.secure_cookies, samesite='lax', max_age=600, path='/api/auth/google')
     pkce = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b'=').decode()
     return {'authorization_url':google.AUTHORIZATION_URL+'?'+urlencode({
         'client_id':settings.google_client_id,'redirect_uri':settings.google_redirect_uri,
@@ -42,7 +42,7 @@ def start(body: StartGoogle, request: Request, response: Response, db: Session =
 
 def finish(location):
     response=RedirectResponse(settings.public_origin+location,status_code=303)
-    response.delete_cookie(OAUTH_COOKIE,path='/api/auth/google',secure=settings.production,httponly=True,samesite='lax')
+    response.delete_cookie(OAUTH_COOKIE,path='/api/auth/google',secure=settings.secure_cookies,httponly=True,samesite='lax')
     return response
 
 @router.get('/callback')

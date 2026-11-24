@@ -4,6 +4,8 @@
 
 2026-11-24最终增量：源码e2246a9已推送，固定提交ZIP的113份文件与本地逐字节一致；CI https://github.com/ruan-collabs/atoms-demo/actions/runs/45339583822 成功（Linux后端、前端、Docker build）。Railway已启用DEV_MOCK_SANDBOX/DEV_INLINE_WORKER并部署成功；公网实测访客Query登录恢复、Mock配置检查保存、后台生成、任务新增/编辑/完成/刷新、迭代构建2、发布与匿名公开分享刷新通过。
 
+收尾文档提交f76ad5已在Railway自动重部署成功，113份文件与当时本地一致；重部署后重新Mock登录恢复配置，原项目、消息、构建2、失败记录和发布均在，私有预览及公开分享任务数据保留。手机流量/无痕GUI未代验，正式生产不算通过。
+
 生成应用是明确标识的Mock fixture，不是本轮真实AI调用。语音按钮与Pipecat STT管线已上线，/api/voice/status明确未配置；真实语音仍待验收，DeepSeek本轮只验证HTTP模拟契约。
 
 ## 本轮前期历史结论

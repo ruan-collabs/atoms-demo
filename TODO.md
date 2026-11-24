@@ -71,15 +71,15 @@
 
 ## T-006 | 接入Google OAuth登录
 
-- 状态：阻塞
+- 状态：进行中
 - 阶段：认证
 - 优先级：P0
 - 验收条件：真实Google OAuth授权码流程、state/nonce与ID token校验，生产安全回调，稳定Google用户映射，缺凭证明确禁用；真实Google联调状态如实记录
 - 依赖：无
 - 替代关系：无
 - 执行证据：docs/GOOGLE_LOGIN.md; backend/tests/test_google.py; backend/alembic/versions/3e6794627349_google_oauth_identities_and_challenges.py
-- 变更说明：2026-11-23：Google OAuth代码与迁移自测通过，但缺真实Client ID/Secret，无法真实授权联调
-- 最后更新：2026-11-23
+- 变更说明：2026-11-24：用户提供Google OAuth凭证文件，恢复安全配置核查及登录联调；真实授权由用户操作
+- 最后更新：2026-11-24
 
 ## T-007 | 开发Mock与完整本地验收证据
 
@@ -271,6 +271,18 @@
 - 替代关系：无
 - 执行证据：docs/RAILWAY_DEPLOYMENT_STATUS.md; backend/tests/test_mock_sandbox.py; .runtime/railway-sandbox-smoke.json; https://github.com/ruan-collabs/atoms-demo/actions/runs/45339583822
 - 变更说明：2026-11-24：用户授权沙箱已部署e2246a9；无same-origin权限、白名单保存与公网匿名分享刷新通过
+- 最后更新：2026-11-24
+
+## T-023 | Google真实登录调试前加固HTTPS会话Cookie与出站
+
+- 状态：进行中
+- 阶段：认证
+- 优先级：P0
+- 验收条件：HTTPS演示Cookie启用Secure；Google交换不使用环境代理；保留state/nonce/PKCE与回放拒绝；自动化通过，不向日志或源码写凭证
+- 依赖：无
+- 替代关系：无
+- 执行证据：待补充
+- 变更说明：2026-11-24：检查发现development HTTPS Cookie未设Secure、Google交换读取环境代理，先修复再使用真实身份
 - 最后更新：2026-11-24
 
 <!-- 待办由守门器追加到此处 -->

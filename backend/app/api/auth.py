@@ -83,7 +83,7 @@ def issue_session(db: Session, user: User, response: Response):
     token = secrets.token_urlsafe(32)
     csrf = digest('csrf:' + token)
     db.add(AuthSession(id=digest(token), user_id=user.id, csrf_hash=digest(csrf), expires_at=now() + timedelta(days=settings.session_days)))
-    response.set_cookie(COOKIE, token, max_age=settings.session_days * 86400, httponly=True, secure=settings.production, samesite='lax', path='/')
+    response.set_cookie(COOKIE, token, max_age=settings.session_days * 86400, httponly=True, secure=settings.secure_cookies, samesite='lax', path='/')
     return csrf
 
 @router.post('/email/verify')
@@ -130,4 +130,4 @@ def logout(request: Request, response: Response, user: User = Depends(current_us
     auth = db.get(AuthSession, digest(request.cookies[COOKIE]))
     db.delete(auth)
     db.commit()
-    response.delete_cookie(COOKIE, path='/', secure=settings.production, httponly=True, samesite='lax')
+    response.delete_cookie(COOKIE, path='/', secure=settings.secure_cookies, httponly=True, samesite='lax')
