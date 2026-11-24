@@ -4,7 +4,7 @@
 
 ## GitHub 与 Railway 交付
 
-源码仓库： https://github.com/ruan-collabs/atoms-demo 。当前Railway演示与验收状态以 docs/RAILWAY_DEPLOYMENT_STATUS.md 为准。Mock专用沙箱无需自有通配域：无same-origin权限的iframe，仅按账号/项目/预览或公开表面保存白名单任务数据；Mock-only后台可由Platform lifespan启动，生产禁用。真实模型仍使用独立Worker/Application服务，生产域与Secret治理必须另验。
+源码仓库： https://github.com/ruan-collabs/atoms-demo 。当前Railway演示与验收状态以 docs/RAILWAY_DEPLOYMENT_STATUS.md 为准。Mock专用沙箱无需自有通配域：无same-origin权限的iframe，仅按账号/项目/预览或公开表面保存白名单任务数据；Mock-only后台可由Platform lifespan启动，生产禁用。真实模型使用独立Worker；应用运行可选独立源Application或APPLICATION_SANDBOX=true的opaque iframe，二者需独立验收，不能仅换path当隔离。
 
 **不要直接把本机 .env、.runtime、数据库、密钥、浏览器自测原始证据上传。** 仓库只包含示例变量和明确标识的Mock实现；生产 APP_ENV=production、DEV_MOCK_AUTH=false、DEV_MOCK_MODEL=false。真实Google/SMTP/模型、独立密钥治理及应用通配域名缺失仍属上线阻塞。完整清单见 docs/PREDEPLOY_CHECKLIST.md 和 docs/MOCK_REGISTER.md。
 
@@ -41,7 +41,7 @@ Mock控制（仅开发）：[mock:fail]上游失败、[mock:invalid]非法HTML�
 
 - app.main：平台API与React静态资源，不执行生成的JS。
 - app.worker：独立后台进程，PostgreSQL FOR UPDATE SKIP LOCKED认领任务，提交成果前检查租约/版本/owner/取消。
-- app.application_server：仅运行保存成功的HTML，无平台身份API。每项目独立 p-project子域预览与a-project子域公开应用；二者不同安全源。
+- app.application_server：独立源运行选项。APPLICATION_SANDBOX=true时改用/api/application-sandbox专用frame与/apps、/preview包装入口；iframe无allow-same-origin、CSP禁止网络和导航。仅异步atomsStorage的限额JSON桥可保存当前项目数据，确认写成功后才显示保存。Mock仍走严格可信fixture，不扩大旧Mock例外。
 - 规划为受限完整JSON响应；真实生成使用content-only SSE流式接收并持久化到Postgres，前端按run/revision/offset增量轮询恢复；Mock仅返回完整fixture，不伪装逐token流。代码只读，完整校验保存后才运行。
 - 本地应用数据仅各存储分区；浏览器iframe第三方存储分区可能使“嵌入预览”和“独立打开预览”也不共享记录。刷新同一表面可保留，发布不迁移预览数据。
 - 生成候选无外部资源，CSP断网络，禁止嵌入、顶层导航/弹窗、凭证读取；仅Node --check语法解析，不运行服务器命令。

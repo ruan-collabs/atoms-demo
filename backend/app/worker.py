@@ -96,7 +96,9 @@ async def execute(run_id,token):
                     # A completed fixture is not disguised as token streaming.
                     await on_delta(value,force=True)
                 return value
-            system='You build self-contained single-page HTML/CSS/JS applications. No external resources, no remote fetch, no server code, payments or sensitive services. Use inline CSS/JS. Never include credentials. Use stable localStorage key atoms-app:data:v1, validate storage and show failures. Preserve existing storage schema on style iterations. Output complete <!doctype html> document, not Markdown.'
+            system='You build self-contained single-page HTML/CSS/JS applications. No external resources, no remote fetch, no server code, payments or sensitive services. Use inline CSS/JS. Never include credentials. Use persistent JSON application data and show failures. Preserve existing storage schema on style iterations. Output complete <!doctype html> document, not Markdown.'
+            if settings.application_sandbox:
+                system += ' Use window.atomsStorage only (provided by the sandbox): getItem("atoms-app:data:v1") returns JSON string or null; await atomsStorage.setItem("atoms-app:data:v1", JSON.stringify(objectOrArray)) resolves only after durable browser save. Initialize from getItem, validate JSON. Every mutation must await setItem before updating UI. No localStorage/sessionStorage/indexedDB/cookies. Use addEventListener; no inline onclick or other event attributes. Include head and classic inline scripts. Data must be JSON object or array under 200KB. Do not define atomsStorage yourself.'
             if stage=='planning':
                 if any(term in prompt for term in ('真实支付','真实医疗','多人共享数据库','真实银行')):raise ProviderError('P0仅支持本地单页应用，不支持此真实敏感服务需求','scope')
                 msgs=[{'role':'system','content':'Return concise JSON with scope, components, interactions, storage and acceptance. Only support local single-page apps. Do not expose hidden reasoning.'},{'role':'user','content':prompt}]
@@ -120,14 +122,18 @@ async def execute(run_id,token):
             transition(run_id,token,'generating','在当前成功构建基础上生成' if base_html else '生成完整应用代码')
             candidate=parse_output(await call('generating'))
             transition(run_id,token,'validating','检查HTML入口、脚本语法、外部资源与凭证泄漏')
-            try:validation=await asyncio.to_thread(validate_html,candidate,key)
+            validate=validate_html
+            if settings.application_sandbox and provider!='mock':
+                from app.api.application_sandbox import sandbox_validate
+                validate=sandbox_validate
+            try:validation=await asyncio.to_thread(validate,candidate,key)
             except ProviderError as exc:
                 if exc.category=='leak':raise
                 candidate_for_repair=candidate
                 transition(run_id,token,'generating','一次修复尝试（可能再次计费，不无限重试）')
                 candidate=parse_output(await call('generating',repair=str(exc)))
                 transition(run_id,token,'validating','修复后重新校验')
-                validation=await asyncio.to_thread(validate_html,candidate,key)
+                validation=await asyncio.to_thread(validate,candidate,key)
             with SessionLocal() as db:
                 run,_=valid_job(db,run_id,token)
                 run.candidate={'html':candidate,'validation':validation,'mock':provider=='mock'}

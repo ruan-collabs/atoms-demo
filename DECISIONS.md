@@ -2,6 +2,10 @@
 
 > 本文件只追加关键方向决策，不覆盖历史。被推翻的决策应标记为“已取代”，并链接新决策。
 
+## D-012｜Railway同域入口与真实opaque沙箱（2026-11-24）
+
+用户明确同意不购买通配域，采用现有Railway域名的/apps与/preview包装入口，生成应用仅在无allow-same-origin的opaque iframe中运行。D-003/D-011强制真实产物通配源的部署前提由此方案替代，但不降低平台权限隔离：专用CSP禁网络/导航能力，随机通道验证source/null-origin；仅允许限额JSON应用数据桥ACK后成功，按owner/project/preview-public分区，不传会话/Key/平台API。真实产物必须符合异步atomsStorage契约，旧localStorage产物不能直接套用，Mock仍可信fixture路线。本轮T-031已经完成平台/真实Worker部署4b06b85与CI；T-032实现并独立验证真实沙箱，不把path当浏览器安全源。
+
 ## D-011｜核心生成交互先设计后开发（2026-11-24）
 
 T-029按用户问题图和录屏先产出生成中/应用就绪/执行阻塞三态视觉稿与规则。只借鉴过程可见、直接预览和自然语言迭代，不复制水印、原文案、外部CDN或假百分比。Railway只读拓扑只有Platform与Postgres，Platform代码只消费Mock；真实Worker/Application未部署是核心阻塞。设计批准后继续T-005/T-008真实执行与隔离预览，不以动效冒充调用成功、不把可信Mock fixture例外扩大至任意HTML。新增服务前先安全处理旧queued，不能自动消费全部历史需求。本轮未改应用源码、推送或部署。

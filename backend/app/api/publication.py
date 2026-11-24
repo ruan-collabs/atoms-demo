@@ -29,6 +29,10 @@ def preview(project_id:UUID,user:User=Depends(current_user),db:Session=Depends(g
     build=db.get(BuildArtifact,project.current_build_id)
     if build and build.artifact.get('mock') and settings.dev_mock_sandbox and not settings.production:
         return {'url':settings.public_origin+'/mock-preview/'+project.id}
+    if settings.application_sandbox and build and not build.artifact.get('mock'):
+        from app.api.application_sandbox import render_frame
+        render_frame(build,uid())
+        return {'url':settings.public_origin+'/preview/'+project.id,'sandbox':True}
     from app.services.readiness import readiness
     if not readiness(db,'mock' if build and build.artifact.get('mock') else 'deepseek')['preview_ready']:
         raise HTTPException(503,'隔离预览服务未就绪，成功构建已保存')
@@ -58,6 +62,13 @@ def publish(project_id:UUID,body:Publish,user:User=Depends(current_user),db:Sess
         p.published_build_id=str(body.build_id);p.target_build_id=str(body.build_id);p.job_key=str(body.idempotency_key)
         p.public_url=settings.public_origin+'/mock-apps/'+project.id
         p.status='published';p.error=None;p.updated_at=now();db.commit()
+        return publication_view(p,project)
+    if settings.application_sandbox and not build.artifact.get('mock'):
+        from app.api.application_sandbox import render_frame
+        render_frame(build,uid())
+        if not p:p=Publication(id=uid(),project_id=project.id);db.add(p)
+        p.published_build_id=build.id;p.target_build_id=build.id;p.job_key=str(body.idempotency_key)
+        p.public_url=settings.public_origin+'/apps/'+project.id;p.status='published';p.error=None;p.updated_at=now();db.commit()
         return publication_view(p,project)
     from app.services.readiness import readiness
     state=readiness(db,'mock' if build.artifact.get('mock') else 'deepseek')

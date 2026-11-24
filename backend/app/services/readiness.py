@@ -34,6 +34,8 @@ def readiness(db, provider):
         return (target.scheme,target.hostname,target.port)!=(platform.scheme,platform.hostname,platform.port)
     preview = application and isolated(settings.preview_origin)
     publish = publication and isolated(settings.app_origin)
+    if settings.application_sandbox:
+        preview = publish = True
     if provider == 'mock' and settings.dev_mock_sandbox and not settings.production:
         preview = publish = True
     return {'worker_ready': ready, 'preview_ready': preview, 'publication_ready':publish,

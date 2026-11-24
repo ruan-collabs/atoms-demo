@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     dev_mock_model: bool = False
     dev_inline_worker: bool = False
     dev_mock_sandbox: bool = False
+    application_sandbox: bool = False
     credential_master_key: str = ''
     credential_key_file: str = str(ROOT / '.runtime' / 'credential.key')
     preview_origin: str = 'http://localhost:8001'
@@ -121,12 +122,13 @@ class Settings(BaseSettings):
             try:
                 if len(base64.urlsafe_b64decode(self.credential_master_key))!=32:raise ValueError()
             except Exception:raise ValueError('CREDENTIAL_MASTER_KEY must be base64 of 32 random bytes') from None
-            for app_origin in (self.preview_origin, self.app_origin):
-                origin = urlsplit(app_origin)
-                if origin.scheme != 'https' or not origin.hostname or origin.hostname == urlsplit(self.public_origin).hostname or origin.path or origin.query or origin.fragment or origin.username or origin.password or origin.port not in (None,443):
-                    raise ValueError('Production requires separate HTTPS preview/application wildcard origins')
-            if self.preview_origin == self.app_origin:
-                raise ValueError('Preview and publication origins must be separate')
+            if not self.application_sandbox:
+                for app_origin in (self.preview_origin, self.app_origin):
+                    origin = urlsplit(app_origin)
+                    if origin.scheme != 'https' or not origin.hostname or origin.hostname == urlsplit(self.public_origin).hostname or origin.path or origin.query or origin.fragment or origin.username or origin.password or origin.port not in (None,443):
+                        raise ValueError('Production requires separate HTTPS preview/application wildcard origins')
+                if self.preview_origin == self.app_origin:
+                    raise ValueError('Preview and publication origins must be separate')
             if len(self.app_secret) < 32 or self.app_secret.startswith('development'):
                 raise ValueError('Production requires a random APP_SECRET of at least 32 characters')
             parts = urlsplit(self.public_origin)

@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from app.config import settings
 from app.db import engine
-from app.api import auth, projects, google_auth, dev, model_config, generation, publication, voice, mock_sandbox
+from app.api import auth, projects, google_auth, dev, model_config, generation, publication, voice, mock_sandbox, application_sandbox
 from app.services.credentials import CredentialError
 from app.services.provider import ProviderError
 
@@ -41,9 +41,9 @@ async def secure_headers(request: Request, call_next):
     response.headers['X-Request-ID'] = str(uuid4())
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'no-referrer'
-    if not request.url.path.startswith('/api/mock-sandbox/'):
+    if not request.url.path.startswith(('/api/mock-sandbox/','/api/application-sandbox/')):
         response.headers['X-Frame-Options'] = 'DENY'
-    if not request.url.path.startswith('/api/mock-sandbox/'):
+    if not request.url.path.startswith(('/api/mock-sandbox/','/api/application-sandbox/')):
         response.headers['Permissions-Policy'] = 'camera=(), microphone=(self), geolocation=()'
     if request.url.path.startswith('/api/'):
         response.headers['Cache-Control'] = 'no-store'
@@ -87,7 +87,7 @@ def health():
 def meta():
     return {'version': '0.2.0', 'stage': 'V1.2构建平台', 'mail_mode': settings.mail_mode,
             'model_allowed_origins': settings.allowed_model_origins,
-            'features': {'mock_auth':settings.dev_mock_auth and not settings.production,'mock_model':settings.dev_mock_model and not settings.production,'google_login': settings.google_enabled, 'projects': True, 'messages': True, 'model_connection_test': True, 'mock_sandbox':settings.dev_mock_sandbox and not settings.production, 'generation': True, 'preview': True, 'publication': True}}
+            'features': {'application_sandbox':settings.application_sandbox,'mock_auth':settings.dev_mock_auth and not settings.production,'mock_model':settings.dev_mock_model and not settings.production,'google_login': settings.google_enabled, 'projects': True, 'messages': True, 'model_connection_test': True, 'mock_sandbox':settings.dev_mock_sandbox and not settings.production, 'generation': True, 'preview': True, 'publication': True}}
 
 app.include_router(auth.router, prefix='/api')
 app.include_router(google_auth.router, prefix='/api')
@@ -98,6 +98,7 @@ app.include_router(generation.router,prefix='/api')
 app.include_router(publication.router,prefix='/api')
 app.include_router(voice.router,prefix='/api')
 app.include_router(mock_sandbox.router,prefix='/api')
+app.include_router(application_sandbox.router,prefix='/api')
 
 @app.get('/mock-sandbox-child.js',include_in_schema=False)
 def mock_sandbox_child():

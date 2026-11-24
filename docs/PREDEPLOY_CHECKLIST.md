@@ -80,7 +80,7 @@
 
 5. 注入独立随机 APP\_SECRET 和 32 随机字节 base64 的 CREDENTIAL\_MASTER\_KEY；平台与 Worker 保持稳定一致，不每次重部署重新生成，否则旧凭证无法解密。密钥管理访问隔离、轮换、备份治理须上线前落实。
 
-6. 平台 PUBLIC\_ORIGIN 为精确 HTTPS Origin；PREVIEW\_ORIGIN 与 APP\_ORIGIN 为不同安全源，两套每项目 wildcard 域名和 TLS 指向 Application。Railway 默认单一服务域名不是通配域。未完成域名不要把预览 / 发布标已可用。
+6. 真实应用运行采用两种明确隔离方案之一：独立安全源/每项目wildcard与TLS，或APPLICATION_SANDBOX=true的opaque iframe。后者可在平台同域path包装入口，但iframe及响应CSP均无allow-same-origin，禁止网络/导航，受限JSON存储桥严格校验source、opaque origin、通道、数据结构与限额，写成功ACK后才显示保存。平台与Worker使用同一开关与生成契约；旧未采用契约的HTML须重新生成，不直接套Mock例外。Railway默认单域不是wildcard；不能据path或开关存在直接标验收通过。
 
 7. 明确保留 Provider HTTPS 目标允许名单、公共 DNS/IP 验证、禁止重定向和凭证泄漏。不因连通失败关闭 SSRF/CSP 或改成明文 Key。
 
