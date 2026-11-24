@@ -1,5 +1,14 @@
 # GitHub 代码交付记录
 
+## 最新增量交付（2026-11-24）
+
+- 源码提交：https://github.com/ruan-collabs/atoms-demo/commit/e2246a914fede5f3ffc9a45c9fe43bee19ee569a ，51份变化，113份总源码固定ZIP与本地逐字节一致。
+- 本地91后端/18前端及构建通过；新CI https://github.com/ruan-collabs/atoms-demo/actions/runs/45339583822 成功，含Linux测试和Docker build。
+- 已部署同一Railway演示服务，Mock沙箱与Mock-only后台开关已应用，公网生成/交互/刷新/迭代/失败旧版保护/匿名分享通过。真实DeepSeek和真实语音未调用；生产门禁不因Mock通过而解除。
+- 以下保留首次源码交付历史。最新上线记录见RAILWAY_DEPLOYMENT_STATUS.md。
+
+## 首次源码交付历史
+
 - 仓库：https://github.com/ruan-collabs/atoms-demo ，公开，main。
 - 首次完整源码提交：https://github.com/ruan-collabs/atoms-demo/commit/951819e07f685286a2da4d73546da18e73591b7c 。
 - 远端源码ZIP下载后，对照脱敏清单逐文件SHA256一致：94文件，无缺失/多余。其后仅同步本交付记录及账本状态。

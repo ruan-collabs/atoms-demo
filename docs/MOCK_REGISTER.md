@@ -2,6 +2,14 @@
 
 本轮用户明确授权Mock完成本地开发验收。Mock永远公开标识、不做真实服务兜底；生产启动强制关闭。
 
+最新演示范围：用户明确接受Mock专用opaque-origin沙箱，Railway已部署e2246a9并通过Mock公网闭环；以下M07/M09保留首次本地阶段描述，最新结果以RAILWAY_DEPLOYMENT_STATUS.md为准。真实生产域、模型、认证与密钥治理不由演示验收替代。
+
+新增M10：DEV_MOCK_SANDBOX仅接受严格匹配的可信fixture；专用frame响应CSP sandbox与iframe均不含allow-same-origin，消息桥只允许限额任务数据，按账号/项目/预览或公开表面分区当前浏览器保存。
+
+新增M11：DEV_INLINE_WORKER仅development且DEV_MOCK_MODEL=true可用，Platform生命周期启动Mock-only后台消费器；队列/构建仍在Postgres。真实模型需独立Worker，production拒绝此开关。
+
+新增M12：Pipecat语音管线测试中仅STT使用模拟服务，其余运输/serializer/pipeline实际运行；真实Deepgram凭证未配置，不能算真实麦克风/网络转写通过。
+
 | 编号 | 替代内容 | 位置/开关 | 本地验证 | 上线前必须做 |
 |---|---|---|---|---|
 | M01 | Google/邮件身份验证，固定Alice/Bob测试会话 | /dev-test，/api/dev/mock-login，DEV_MOCK_AUTH=true | 真实平台会话/CSRF/owner后续链路；不验证身份提供方 | DEV_MOCK_AUTH=false，撤销/清理Mock会话与测试账号，填GoogleOAuth或SMTP，真实授权/收码 |

@@ -45,6 +45,12 @@ Mock无真实Key，仅fixture标记；后台仅消费Mock任务，不需要生�
 
 ## 当前真实状态
 
+Railway演示已实际创建并部署：Platform atoms-demo + 持久化Postgres，HTTPS https://atoms-demo-production-57bed089.up.railway.app 。新代码e2246a9及DEV_MOCK_SANDBOX/DEV_INLINE_WORKER已上线并通过Mock核心浏览器回归。正式生产拓扑不视为完成，最新状态见RAILWAY_DEPLOYMENT_STATUS.md。
+
+Railway新服务界面当前不支持旧Config-as-code；本项目的启动python run.py、迁移alembic upgrade head、健康/api/health已在UI设置，不假定railway*.json自动生效。
+
+## 历史源码交付阶段状态（已由上述演示部署更新）
+
 源码已推送公开GitHub仓库，源码提交951819e，GitHub Actions运行45317051622成功（后端、前端和Docker镜像build）。本地服务已自测；尚未在Railway账号创建服务、未配置DNS/TLS或生产SecretManager，Docker镜像run与真实公网生产链路尚未验收。仅镜像build成功不能证明部署后可用。详见GITHUB_DELIVERY.md。
 
 不要把开发Mock或localhost链接作为已上线证据。用户本轮授权不二次确认，因此人工配置卡点记录后继续开发，不申请真实凭证或创建付费资源。

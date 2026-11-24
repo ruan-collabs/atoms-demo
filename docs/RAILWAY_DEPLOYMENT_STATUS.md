@@ -1,6 +1,22 @@
 # Railway Mock 阶段部署记录
 
-## 最新回归与本地修复
+## 最新部署与公网验收（2026-11-24）
+
+- GitHub源码：e2246a914fede5f3ffc9a45c9fe43bee19ee569a；固定commit ZIP 113份文件与本地逐字节一致，无多余文件。公开commit：https://github.com/ruan-collabs/atoms-demo/commit/e2246a914fede5f3ffc9a45c9fe43bee19ee569a 。
+- CI成功：https://github.com/ruan-collabs/atoms-demo/actions/runs/45339583822 ；Linux后端测试、前端测试/构建、Docker build均在同一verify工作流中，1条Action运行时弃用警告。
+- Railway同一Platform服务已按GitHub新源码成功Active，启用DEV_MOCK_SANDBOX=true、DEV_INLINE_WORKER=true。保留development、两个Mock开关、Postgres引用、MAIL_MODE=disabled、精确PUBLIC_ORIGIN；无真实Key或STT凭证注入，无付费套餐变更。
+- 公网health为ok、PostgreSQL迁移46670bfb6eb1；meta.mock_sandbox=true。语音status.enabled=false，明确等待VOICE_ENABLED与DEEPGRAM_API_KEY。
+- 线上实测：退出后/dashboard仍公开可见；输入不跳登录，发送才跳/login；Mock Alice回工作台恢复完整Query但不自动生成；Mock检查保存不再报缺主密钥；提交后由Mock-only后台规划生成并保存构建1。
+- 公网沙箱实测新增、编辑、完成，刷新后标题与完成统计保留；访问iframe.document为SecurityError。提交紫色迭代保存构建2，旧任务与完成状态保留；发布得到稳定/mock-apps分享路径。显式[ mock:fail ]失败后构建2和既有任务仍在。
+- 分享与预览初始任务数据独立；公开分享新增任务后刷新保留；退出登录后公开分享仍加载。独立web_fetch未携账号读取公开build成功，number=2、mock=true，含紫色主题。
+
+演示入口：https://atoms-demo-production-57bed089.up.railway.app/dev-test 。访客工作台：https://atoms-demo-production-57bed089.up.railway.app/dashboard 。实际验收分享：https://atoms-demo-production-57bed089.up.railway.app/mock-apps/1eddadf0-080c-47d3-8cf3-7ea3a951991d 。
+
+平台项目/消息/任务/构建/发布存在PostgreSQL；沙箱内部任务数据只保存在当前浏览器，不承诺跨端同步。浏览器执行器对HTTPS跨进程iframe的ref坐标定位报offscreen，表单交互用针对该child的CDP DOM回退实测，未放宽sandbox/CSP或伪造保存状态。
+
+仍未验：容器重部署后业务恢复、手机流量与无痕GUI、真实认证、真实DeepSeek、真实语音/KMS/生产独立域。下文保留旧部署历史，不能作为当前线上状态。当前只完成用户授权的Mock阶段。
+
+## 前期本地修复与旧部署历史
 
 线上Mock配置已实际复现“加密密钥不可用，操作已拒绝”。本地代码已将Mock改为无需主密钥的非秘密fixture标记，并完成访客浏览/Query登录恢复、DeepSeek官方接口契约、Pipecat STT实时转文字接入。最新89后端/16前端测试及构建通过，本地浏览器生成交互、刷新恢复、迭代与实际发布通过。详情见INCREMENTAL_ACCEPTANCE.md。
 

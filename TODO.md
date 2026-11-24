@@ -215,14 +215,14 @@
 
 ## T-018 | 回归修复Mock演示核心生成预览持久化链路
 
-- 状态：进行中
+- 状态：已完成
 - 阶段：验证
 - 优先级：P0
 - 验收条件：实际测试Mock入口、连接保存、生成迭代、可交互预览、刷新恢复；修复缺陷且分别记录本地与Railway结果，不以页面200代替闭环
 - 依赖：无
 - 替代关系：无
-- 执行证据：docs/INCREMENTAL_ACCEPTANCE.md; backend/tests/test_generation.py; .runtime/incremental-smoke.json
-- 变更说明：2026-11-24：Mock沙箱方式已确认，恢复公网核心链路修复验收
+- 执行证据：docs/RAILWAY_DEPLOYMENT_STATUS.md; docs/INCREMENTAL_ACCEPTANCE.md; .runtime/railway-sandbox-smoke.json
+- 变更说明：2026-11-24：Mock无主密钥配置及公网生成交互刷新迭代发布通过；真实供应商不算已验
 - 最后更新：2026-11-24
 
 ## T-019 | 支持未登录浏览核心页及提交Query后登录恢复
@@ -263,14 +263,14 @@
 
 ## T-022 | 实现Mock专用沙箱预览并上线公网闭环
 
-- 状态：进行中
+- 状态：已完成
 - 阶段：演示部署
 - 优先级：P0
 - 验收条件：Mock iframe无same-origin权限，通信验证source与通道，仅持久化白名单应用数据按项目隔离；保留真实模型独立域路径；更新GitHub/Railway Worker并公网回归生成预览恢复迭代发布
 - 依赖：无
 - 替代关系：无
-- 执行证据：待补充
-- 变更说明：2026-11-24：用户已选择Mock专用沙箱预览并授权继续上线验证
+- 执行证据：docs/RAILWAY_DEPLOYMENT_STATUS.md; backend/tests/test_mock_sandbox.py; .runtime/railway-sandbox-smoke.json; https://github.com/ruan-collabs/atoms-demo/actions/runs/45339583822
+- 变更说明：2026-11-24：用户授权沙箱已部署e2246a9；无same-origin权限、白名单保存与公网匿名分享刷新通过
 - 最后更新：2026-11-24
 
 <!-- 待办由守门器追加到此处 -->

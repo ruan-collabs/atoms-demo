@@ -12,9 +12,13 @@ T-019允许无登录态展示公共工作台及输入需求；只在提交Query�
 
 ## D-006｜Mock专用opaque-origin沙箱（2026-11-24）
 
-T-022：用户明确选择Mock专用沙箱预览。只对标识为Mock的fixture使用iframe srcdoc + sandbox allow-scripts/allow-forms，不授予allow-same-origin；平台父组件提供有白名单和限额的应用数据桥，按账号/项目/预览或公开表面分区保存在当前浏览器。数据写入确认后才显示成功，不向子页面传会话/Key/平台API能力。消息校验event.source、随机通道、类型与数据结构；真实模型产物保持独立Application安全源设计，不套用此Mock例外。Mock分享可用平台HTML包装壳，无平台身份能力；独立预览需owner登录，公开分享只在发布指针有效时可达。保存代码/项目/任务在PostgreSQL，预览内业务数据明确为当前浏览器，不承诺跨端同步。
+T-022：用户明确选择Mock专用沙箱预览。只对标识为Mock的fixture使用iframe srcdoc + sandbox allow-scripts/allow-forms（初版设想，现采用下文D-006实施补充），不授予allow-same-origin；平台父组件提供有白名单和限额的应用数据桥，按账号/项目/预览或公开表面分区保存在当前浏览器。数据写入确认后才显示成功，不向子页面传会话/Key/平台API能力。消息校验event.source、随机通道、类型与数据结构；真实模型产物保持独立Application安全源设计，不套用此Mock例外。Mock分享可用平台HTML包装壳，无平台身份能力；独立预览需owner登录，公开分享只在发布指针有效时可达。保存代码/项目/任务在PostgreSQL，预览内业务数据明确为当前浏览器，不承诺跨端同步。
 
-目前没有关键方向决策。
+目前没有关键方向决策。（初始化时的历史占位，现已有下列决策。）
+
+## D-006实施补充｜专用frame URL而非srcdoc（2026-11-24）
+
+实测srcdoc继承父页面CSP无法执行fixture内联脚本。最终改用受保护frame资源URL，响应与iframe同时强制sandbox allow-scripts allow-forms、无allow-same-origin；frame专用CSP禁止connect/frame/form导航，父页面仍不执行产物。按规范化后的可信fixture精确匹配，不放宽任意生成HTML。真实浏览器访问child document返回SecurityError，保存桥需要ACK后才应用状态。Mock-only后台通过Platform lifecycle运行，无需新建独立Railway Worker；真实模型拓扑不变。关联T-022。
 
 ## D-001｜基础框架而非完整P0（2026-11-23）
 
