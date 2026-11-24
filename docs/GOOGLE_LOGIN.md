@@ -1,5 +1,20 @@
 # Google 登录接入
 
+## 本轮真实验收结果（2026-11-24）
+
+真实Google登录已通过Railway HTTPS入口验证，不再是Google网络替身：用户本人配置GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET及稳定APP_SECRET，并亲自完成两次Google授权。
+
+- 安全修复源码bf0f60d17d92584497d76fcb380d751180c9d170已推送并部署；固定commit ZIP113份文件与当时本地逐字节一致，无凭证附件或额外文件。
+- 本地94后端/18前端及构建通过；CI https://github.com/ruan-collabs/atoms-demo/actions/runs/45348425104 成功，含Docker build。
+- Railway变量变更部署Active且成功，/api/meta.features.google_login=true，health正常。未切production，Mock演示开关仍保留，真实模型/语音未调用。
+- 访客输入Query，提交后才进入/login；用户真实Google授权回/dashboard，业务身份接口成功且不是mock.invalid身份。
+- Query完整恢复到输入框，无自动提交或计费；新账号仍显示模型配置弹窗，没有绕过模型门禁。
+- 退出后/auth/me为401；同一Google账号再次授权后业务用户ID指纹相同，复用原账号。
+- 自动化另外覆盖state失效、nonce/issuer/audience/签名错误、授权取消、回放拒绝、邮箱账号不自动合并。真实用户取消授权和实际Google网络故障未人工注入，不冒称这些场景真实联调全通过。
+
+凭证值、授权code、Cookie和Google Token均未记录到本报告；业务用户比较只保留本地不可逆指纹。受保护应用账户能登录不代表生产KMS、真实模型或全部P0通过。当前安全修复已线上，以下收尾验收说明本地追加，未再推送触发部署。
+
+
 ## 已有代码
 
 后端服务端授权码流程：POST /api/auth/google/start → Google 授权页面 → GET /api/auth/google/callback → /dashboard。

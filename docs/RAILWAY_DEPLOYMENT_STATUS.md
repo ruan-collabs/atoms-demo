@@ -1,5 +1,12 @@
 # Railway Mock 阶段部署记录
 
+## Google登录增量（2026-11-24）
+
+安全修复bf0f60d17d92584497d76fcb380d751180c9d170已部署Active，固定113份源码与本地一致，CI 45348425104成功；本地94后端/18前端及构建通过。用户亲自添加Google客户端两项凭证和稳定APP_SECRET，在本服务部署后meta.google_login=true。HTTPS会话及OAuth临时Cookie强制Secure，启用Google时不接受默认开发APP_SECRET；旧会话失效，不清除项目或数据库。
+
+真实Google账号授权两次通过：回/dashboard非Mock业务身份、登录前Query恢复且无自动执行、模型门禁保留；退出接口401，同一Google账号再次登录复用同一用户（只比较本地不可逆指纹）。未录入真实模型Key，未发起DeepSeek或STT调用。Google登录真实通过不等于生产模式或完整真实生成上线；演示开关保持。本段为本地收尾验收，详细见GOOGLE_LOGIN.md。
+
+
 ## 最终回读补充
 
 收尾文档提交f76ad55969b102344f7906f7977a6754070a5542已回读；固定ZIP113份文件与当时本地一致。Railway自动部署该提交后Active、Deployment successful；再次Mock登录，配置恢复且没有模型弹窗，原项目、全部消息、构建2、失败历史及发布仍在。私有预览已完成任务和匿名公开分享任务数据均保留，health仍ok。本段为重部署后追加的本地验收记录，远端f76ad5保留重部署前冻结证据，不为补充描述再次触发部署。

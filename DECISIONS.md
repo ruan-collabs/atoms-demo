@@ -2,6 +2,14 @@
 
 > 本文件只追加关键方向决策，不覆盖历史。被推翻的决策应标记为“已取代”，并链接新决策。
 
+## D-008｜火山新版API Key实时ASR（2026-11-24）
+
+用户最终选择火山引擎并添加VOICE_PROVIDER/VOLC_ASR_API_KEY/VOLC_ASR_RESOURCE_ID/VOICE_ENABLED，D-007的Deepgram供应商选择已被本决策取代，保留兼容但不自动切换。T-026用Pipecat WebSocket运输+自定义火山ASR FrameProcessor；官方固定bigmodel_async双向流式，200ms PCM16/16k mono，X-Api-Key和匹配资源ID，公共DNS固定IP/Host/TLS SNI、无环境代理与重定向。全量文字覆盖而非追加避免重复，停止录音后等待最终包，麦克风立即释放但输入/发送仍锁定至收尾。原音频与Key不落盘日志，权限/时限/并发/限额保留。真实短录音由用户选择同意并说话，不自动采集私人音频。
+
+## D-007｜语音继续使用Deepgram实时转写（2026-11-24）
+
+T-025核实DeepSeek官方ASR指南 https://api-docs.deepseek.com/guides/asr/ ：一次上传完整录音，明确不支持流式识别。用户在明确权衡后选择“保留实时转写：Deepgram + DeepSeek”，不接受停止录音后再转文字作为替代。因此T-025由T-021既有Pipecat + Deepgram STT方案替代；应用生成仍使用用户DeepSeek配置。不实施DeepSeek批量ASR、不做分段上传伪实时、无本轮代码改动或新部署；真实语音仍需Deepgram凭证和麦克风验收。
+
 ## D-004｜Railway先发布Mock阶段HTTPS入口（2026-11-24）
 
 T-015替代T-013本轮完整生产部署目标。用户明确要求暂不处理真实登录，目前处于Mock阶段，只验部署成功和外网HTTPS可访问。使用Railway自带域名，APP_ENV为development且Mock明确标识；不改production禁Mock规则，不将演示称为真实身份/模型验收。不要求两套wildcard来阻挡平台页面上线，但生成应用独立预览和发布仍未公网验收。真实Key与敏感信息不得输入公开共享测试账号。本轮不扩展为真实认证、付费套餐或安全策略降级。

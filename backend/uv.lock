@@ -152,6 +152,7 @@ dependencies = [
     { name = "pyjwt", extra = ["crypto"] },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "websockets" },
 ]
 
 [package.optional-dependencies]
@@ -174,6 +175,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8,<9" },
     { name = "sqlalchemy", specifier = ">=2.0.38,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34,<1" },
+    { name = "websockets", specifier = ">=15,<18" },
 ]
 provides-extras = ["test"]
 

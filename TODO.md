@@ -71,14 +71,14 @@
 
 ## T-006 | 接入Google OAuth登录
 
-- 状态：进行中
+- 状态：已完成
 - 阶段：认证
 - 优先级：P0
 - 验收条件：真实Google OAuth授权码流程、state/nonce与ID token校验，生产安全回调，稳定Google用户映射，缺凭证明确禁用；真实Google联调状态如实记录
 - 依赖：无
 - 替代关系：无
-- 执行证据：docs/GOOGLE_LOGIN.md; backend/tests/test_google.py; backend/alembic/versions/3e6794627349_google_oauth_identities_and_challenges.py
-- 变更说明：2026-11-24：用户提供Google OAuth凭证文件，恢复安全配置核查及登录联调；真实授权由用户操作
+- 执行证据：docs/GOOGLE_LOGIN.md; .runtime/google-login-smoke.json; https://github.com/ruan-collabs/atoms-demo/actions/runs/45348425104
+- 变更说明：2026-11-24：用户两次真实Google授权成功，Query恢复、模型门禁、退出401与同账号复用验证通过；不算真实模型或生产全验收
 - 最后更新：2026-11-24
 
 ## T-007 | 开发Mock与完整本地验收证据
@@ -275,14 +275,50 @@
 
 ## T-023 | Google真实登录调试前加固HTTPS会话Cookie与出站
 
-- 状态：进行中
+- 状态：已完成
 - 阶段：认证
 - 优先级：P0
 - 验收条件：HTTPS演示Cookie启用Secure；Google交换不使用环境代理；保留state/nonce/PKCE与回放拒绝；自动化通过，不向日志或源码写凭证
 - 依赖：无
 - 替代关系：无
+- 执行证据：backend/tests/test_google.py; docs/GOOGLE_LOGIN.md; https://github.com/ruan-collabs/atoms-demo/commit/bf0f60d17d92584497d76fcb380d751180c9d170
+- 变更说明：2026-11-24：HTTPS Secure Cookie、默认APP_SECRET拒绝及Google固定出站修复已部署；94后端/18前端/构建与CI通过
+- 最后更新：2026-11-24
+
+## T-024 | 验证Railway加密主密钥与DeepSeek真实连接测试
+
+- 状态：进行中
+- 阶段：模型
+- 优先级：P0
+- 验收条件：确认用户新增主密钥部署生效，仅点击既有DeepSeek配置连接测试并回读脱敏结果，不读取或记录Key、不生成应用、不自动重复计费请求
+- 依赖：无
+- 替代关系：无
 - 执行证据：待补充
-- 变更说明：2026-11-24：检查发现development HTTPS Cookie未设Secure、Google交换读取环境代理，先修复再使用真实身份
+- 变更说明：2026-11-24：用户已添加加密主密钥并授权真实连接测试，替代本轮不调用的临时限制；不扩大为生成部署
+- 最后更新：2026-11-24
+
+## T-025 | 核实并接入DeepSeek语音识别替代Deepgram
+
+- 状态：已被替代
+- 阶段：语音
+- 优先级：P1
+- 验收条件：核实DeepSeek官方ASR及流式协议，支持时接入Pipecat与已加密用户Key，限额鉴权和不落音频；不支持实时或无法核实时说明阻塞，不冒称流式或偷偷换供应商
+- 依赖：无
+- 替代关系：T-021
+- 执行证据：DECISIONS.md; https://api-docs.deepseek.com/guides/asr/
+- 变更说明：2026-11-24：官方DeepSeek ASR不支持流式，用户已明确保留实时转写方案，继续既有T-021语音接入；未改代码部署
+- 最后更新：2026-11-24
+
+## T-026 | 切换火山新版API Key实时语音识别并上线
+
+- 状态：进行中
+- 阶段：语音
+- 优先级：P1
+- 验收条件：火山新版X-Api-Key鉴权、官方双向流式协议、Pipecat运输保留、转写去重停止收尾与限额安全；不读密钥值；测试构建部署及短录音真实验收分别记录
+- 依赖：无
+- 替代关系：无
+- 执行证据：待补充
+- 变更说明：2026-11-24：用户选定火山引擎并已添加新版API Key变量，恢复实时语音迁移
 - 最后更新：2026-11-24
 
 <!-- 待办由守门器追加到此处 -->

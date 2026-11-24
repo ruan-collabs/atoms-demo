@@ -2,6 +2,8 @@
 
 本轮用户明确授权Mock完成本地开发验收。Mock永远公开标识、不做真实服务兜底；生产启动强制关闭。
 
+最新Google登录增量：Railway bf0f60d已配置Google并真实账号授权/退出/重登通过，详见GOOGLE_LOGIN.md。M01仅指保留的共享演示登录路径，不再代表Google真实授权尚未接通；邮件仍disabled。真实模型与语音没有调用，production仍禁Mock。
+
 最新演示范围：用户明确接受Mock专用opaque-origin沙箱，Railway已部署e2246a9并通过Mock公网闭环；以下M07/M09保留首次本地阶段描述，最新结果以RAILWAY_DEPLOYMENT_STATUS.md为准。真实生产域、模型、认证与密钥治理不由演示验收替代。
 
 新增M10：DEV_MOCK_SANDBOX仅接受严格匹配的可信fixture；专用frame响应CSP sandbox与iframe均不含allow-same-origin，消息桥只允许限额任务数据，按账号/项目/预览或公开表面分区当前浏览器保存。

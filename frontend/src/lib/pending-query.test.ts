@@ -9,6 +9,14 @@ describe('pending query (no automatic generation)',()=>{
  it('ignores malformed values',()=>{sessionStorage.setItem('atoms:pending-query:v1','not-json');expect(takePendingQuery()).toBe('');});
 });
 describe('streaming transcripts',()=>{
+ it('replaces full Volcengine result without repeating final sentences',()=>{
+  let s={seq:0,committed:'',interim:''};
+  s=applyTranscript(s,{type:'transcript',seq:1,text:'创建',final:false,replace:true});
+  s=applyTranscript(s,{type:'transcript',seq:2,text:'创建任务板',final:false,replace:true});
+  s=applyTranscript(s,{type:'transcript',seq:3,text:'创建任务板',final:true,replace:true});
+  s=applyTranscript(s,{type:'transcript',seq:4,text:'创建任务板并保存',final:true,replace:true});
+  expect(transcriptText(s)).toBe('创建任务板并保存');
+ });
  it('replaces interim, appends final and ignores duplicate sequences',()=>{
   let s={seq:0,committed:'',interim:''};
   s=applyTranscript(s,{type:'transcript',seq:1,text:'创建',final:false});

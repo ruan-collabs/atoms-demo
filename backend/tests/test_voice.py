@@ -3,6 +3,10 @@ import pytest
 from starlette.websockets import WebSocketDisconnect
 from app.config import settings
 
+@pytest.fixture(autouse=True)
+def default_voice_provider(monkeypatch):
+    monkeypatch.setattr(settings,'voice_provider','deepgram')
+
 def test_voice_status_unconfigured_is_clear(client,monkeypatch):
     monkeypatch.setattr(settings,'voice_enabled',False)
     result=client.get('/api/voice/status')

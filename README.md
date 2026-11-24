@@ -52,6 +52,6 @@ bash scripts/test.sh运行后端真实临时PostgreSQL集成测试、前端单�
 
 UI证据由实际浏览器点击/输入/刷新获取，docs/evidence/*.txt不是自动伪造断言；截图是浏览器实测。测试中的上游网络/Google交换模拟清楚登记，不计为真实上游已接通。
 
-Railway参见 docs/RAILWAY.md 和 docs/RAILWAY_DEPLOYMENT_STATUS.md。演示开启 DEV_MOCK_SANDBOX=true、DEV_INLINE_WORKER=true 时仅运行Mock fixture任务，正式切production必须关闭。真实模型拓扑需要独立Worker/Application安全源和稳定Secret。语音实时转文字通过Pipecat STT-only管线，配置VOICE_ENABLED与DEEPGRAM_API_KEY后才能真实联调；本轮未执行真实DeepSeek或真实语音调用。
+Railway参见 docs/RAILWAY.md 和 docs/RAILWAY_DEPLOYMENT_STATUS.md。演示开启 DEV_MOCK_SANDBOX=true、DEV_INLINE_WORKER=true 时仅运行Mock fixture任务，正式切production必须关闭。真实模型拓扑需要独立Worker/Application安全源和稳定Secret。语音实时转文字通过Pipecat STT-only管线。火山新版控制台配置VOICE_PROVIDER=volcengine、VOICE_ENABLED=true、VOLC_ASR_API_KEY、VOLC_ASR_RESOURCE_ID（匹配开通服务），固定官方双向流式；无需App ID/Access Token。详细安全与验收见docs/VOICE_INPUT.md。兼容Deepgram时显式VOICE_PROVIDER=deepgram、DEEPGRAM_API_KEY，无自动切供应商。
 
 新增需求先入TODO；每次schema更新新增Alembic版本。不可自动删除生产数据或改写已应用迁移；备份/expand-contract迁移后再部署。Mock注册、生产待办和验收情况都在docs/SELF_TEST.md中。

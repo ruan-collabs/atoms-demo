@@ -13,10 +13,12 @@ active_sessions=set()
 
 @router.get('/status')
 def voice_status():
-    enabled=bool(settings.voice_enabled and settings.deepgram_api_key)
-    return {'enabled':enabled,'provider':'pipecat-deepgram','requires_login':True,
+    enabled=bool(settings.voice_enabled and settings.voice_configured)
+    label='火山引擎' if settings.voice_provider=='volcengine' else 'Deepgram'
+    missing='VOICE_ENABLED、VOLC_ASR_API_KEY及有效VOLC_ASR_RESOURCE_ID' if settings.voice_provider=='volcengine' else 'VOICE_ENABLED与DEEPGRAM_API_KEY'
+    return {'enabled':enabled,'provider':'pipecat-'+settings.voice_provider,'provider_name':label,'requires_login':True,
             'max_seconds':min(max(settings.voice_max_seconds,1),120),
-            'message':'点击后麦克风音频传给语音服务，仅转写不自动发送需求' if enabled else '语音未配置：需要VOICE_ENABLED与DEEPGRAM_API_KEY'}
+            'message':f'点击后音频传给{label}实时转写，仅填入文字，不自动发送需求' if enabled else '语音未配置：需要'+missing}
 
 @router.websocket('/ws')
 async def transcription(websocket:WebSocket):
@@ -31,7 +33,7 @@ async def transcription(websocket:WebSocket):
         if not user or (settings.production and user.email.endswith('@mock.invalid')):
             await websocket.close(code=1008);return
         owner=user.id
-    if not settings.voice_enabled or not settings.deepgram_api_key:
+    if not settings.voice_enabled or not settings.voice_configured:
         await websocket.close(code=1013);return
     if owner in active_sessions or len(active_sessions)>=min(max(settings.voice_max_connections,1),4):
         await websocket.close(code=1013);return

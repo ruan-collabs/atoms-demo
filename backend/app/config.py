@@ -38,11 +38,22 @@ class Settings(BaseSettings):
     lease_seconds: int = 60
     mock_delay_seconds: float = 1.0
     voice_enabled: bool = False
+    voice_provider: Literal['deepgram', 'volcengine'] = 'deepgram'
+    volc_asr_api_key: str = ''
+    volc_asr_resource_id: str = ''
     deepgram_api_key: str = ''
     voice_model: str = 'nova-2'
     voice_language: str = 'zh-CN'
     voice_max_seconds: int = 60
     voice_max_connections: int = 2
+
+    @property
+    def voice_configured(self):
+        if self.voice_provider == 'volcengine':
+            return bool(self.volc_asr_api_key and self.volc_asr_resource_id in (
+                'volc.bigasr.sauc.duration', 'volc.bigasr.sauc.concurrent',
+                'volc.seedasr.sauc.duration', 'volc.seedasr.sauc.concurrent'))
+        return bool(self.deepgram_api_key)
 
     @property
     def mock_allowed(self):
