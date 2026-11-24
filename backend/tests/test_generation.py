@@ -52,9 +52,39 @@ def test_encrypted_database_and_no_key_api(client,login):
     login(client)
     result=client.get('/api/model-config');assert 'MOCK-NON-SECRET' not in result.text and 'ciphertext' not in result.text
     with SessionLocal() as db:
-        c=db.scalar(select(ModelConfiguration));assert c.ciphertext and 'MOCK-NON-SECRET' not in c.ciphertext
-        assert decrypt(c.ciphertext,c.owner_id,c.id,c.version)=='MOCK-NON-SECRET'
+        c=db.scalar(select(ModelConfiguration));assert c.ciphertext=='mock-fixture-v1'
         assert db.scalar(select(ModelDraft)).ciphertext is None
+
+
+def test_mock_core_without_master_key(client,monkeypatch):
+    monkeypatch.setattr(settings,'dev_mock_auth',True)
+    monkeypatch.setattr(settings,'credential_master_key','')
+    monkeypatch.setattr(settings,'credential_key_file','/missing/mock-needs-no-key')
+    response=client.post('/api/dev/mock-login',json={'account':'alice'})
+    client.headers['X-CSRF-Token']=response.json()['csrf_token']
+    draft=client.post('/api/model-config/test',json={'provider':'mock','api_key':'','base_url':'mock://local','model':'fixture','idempotency_key':str(uuid.uuid4()),'consent':True})
+    assert draft.status_code==200,draft.text
+    assert client.post('/api/model-config/save',json={'draft_id':draft.json()['draft_id'],'consent':True}).status_code==200
+    pid=create(client);finish();assert snapshot(client,pid)['run']['status']=='succeeded'
+    # A shared demonstration identity must never accept real credentials.
+    real=client.post('/api/model-config/test',json={'provider':'deepseek','api_key':'fixture-not-real','base_url':'https://api.deepseek.com','model':'deepseek-flash','idempotency_key':str(uuid.uuid4()),'consent':True})
+    assert real.status_code==422
+
+def test_real_provider_draft_stays_encrypted_without_live_call(client,login,monkeypatch):
+    from app.api import model_config
+    login(client)
+    async def fake_completion(*args,**kwargs):return 'OK'
+    monkeypatch.setattr(model_config,'completion',fake_completion)
+    monkeypatch.setattr(model_config,'resolve_target',lambda url:('https://8.8.8.8/chat/completions','api.deepseek.com'))
+    secret='test-only-provider-credential'
+    result=client.post('/api/model-config/test',json={'provider':'deepseek','api_key':secret,'base_url':'https://api.deepseek.com','model':'deepseek-flash','idempotency_key':str(uuid.uuid4()),'consent':True})
+    assert result.status_code==200 and secret not in result.text
+    assert client.post('/api/model-config/save',json={'draft_id':result.json()['draft_id'],'consent':True}).status_code==200
+    view=client.get('/api/model-config');assert secret not in view.text and 'ciphertext' not in view.text
+    with SessionLocal() as db:
+        config=db.scalar(select(ModelConfiguration));assert secret not in config.ciphertext
+        assert decrypt(config.ciphertext,config.owner_id,config.id,config.version)==secret
+
 
 def test_expired_or_foreign_draft_cannot_save(client,login):
     login(client);r=client.post('/api/model-config/test',json={'provider':'mock','api_key':'','base_url':'mock://local','model':'fixture','idempotency_key':str(uuid.uuid4()),'consent':True})

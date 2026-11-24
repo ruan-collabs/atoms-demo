@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     google_client_secret: str = ''
     dev_mock_auth: bool = False
     dev_mock_model: bool = False
+    dev_inline_worker: bool = False
+    dev_mock_sandbox: bool = False
     credential_master_key: str = ''
     credential_key_file: str = str(ROOT / '.runtime' / 'credential.key')
     preview_origin: str = 'http://localhost:8001'
@@ -35,6 +37,12 @@ class Settings(BaseSettings):
     run_budget_seconds: int = 180
     lease_seconds: int = 60
     mock_delay_seconds: float = 1.0
+    voice_enabled: bool = False
+    deepgram_api_key: str = ''
+    voice_model: str = 'nova-2'
+    voice_language: str = 'zh-CN'
+    voice_max_seconds: int = 60
+    voice_max_connections: int = 2
 
     @property
     def mock_allowed(self):
@@ -88,7 +96,7 @@ class Settings(BaseSettings):
             if parts.scheme != 'https' or not parts.netloc or parts.username or parts.password or parts.query or parts.fragment or parts.path not in ('', '/'):
                 raise ValueError('MODEL_ALLOWED_ORIGINS must contain exact HTTPS origins')
         if self.production:
-            if self.dev_mock_auth or self.dev_mock_model:
+            if self.dev_mock_auth or self.dev_mock_model or self.dev_inline_worker or self.dev_mock_sandbox:
                 raise ValueError('All development mocks are forbidden in production')
             if not self.credential_master_key:
                 raise ValueError('Production requires separate CREDENTIAL_MASTER_KEY secret')

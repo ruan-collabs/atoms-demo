@@ -2,15 +2,23 @@
 
 - 项目名称：Atoms
 - 项目目标：建立 React + Python + PostgreSQL 的 Railway 可部署基础框架，支持后续增量迭代
-- 当前阶段：代码已推送公开GitHub，CI含Docker镜像build通过；真实Railway上线未完成
-- 当前焦点：无
-- 阻塞事项：真实Google/SMTP/模型凭证、KMS权限与备份治理、Railway账号/DNS通配域/TLS；逐token流式未实现
-- 下一步：在Railway按docs/PREDEPLOY_CHECKLIST.md配置角色和生产Secrets，关闭Mock，完成公网真实验收
+- 当前阶段：Mock沙箱与后台选项本地通过，准备GitHub/Railway增量部署
+- 当前焦点：T-018/T-022公网回归
+- 阻塞事项：真实语音STT凭证待用户配置，真实DeepSeek本轮不调用；真实生产独立域与Secret治理未验
+- 下一步：同步源码，Railway启用Mock沙箱和Mock-only后台，再验外网生成、交互、刷新、迭代、发布
 - 最后更新：2026-11-24
 
 ## 当前摘要
 
-V1.2服务端加密配置、独立PostgreSQL Worker、生成/迭代/取消恢复、隔离预览及本地公开发布更新已实现。本轮公开GitHub ruan-collabs/atoms-demo main已推送，首次94份源码下载校验一致，CI成功含Docker镜像build；代码交付见docs/GITHUB_DELIVERY.md。实际浏览器Mock闭环证据仅本地保留；本轮回归70后端/11前端通过。真实身份与模型、生产KMS和Railway公网、镜像run、逐token流式仍未验收，不标生产AC全通过。
+V1.2服务端加密配置、独立PostgreSQL Worker、生成/迭代/取消恢复、隔离预览及本地公开发布更新已实现。本轮公开GitHub ruan-collabs/atoms-demo main已推送，首次94份源码下载校验一致，CI成功含Docker镜像build；代码交付见docs/GITHUB_DELIVERY.md。实际浏览器Mock闭环证据仅本地保留；本轮回归70后端/11前端通过。本轮Railway项目selfless-contentment已连接GitHub main，Postgres与postgres-volume已创建。按用户最新Mock阶段要求，平台UI启动/迁移/健康与development Mock变量已应用，Deploy成功，外网HTTPS及前端资源HTTP200，健康检查status=ok且迁移46670bfb6eb1。演示入口https://atoms-demo-production-57bed089.up.railway.app/dev-test。Worker/Application和稳定加密配置未接通，不声称生成预览发布闭环完成。详细进度见docs/RAILWAY_DEPLOYMENT_STATUS.md。真实身份与模型、生产密钥治理、完整公网链路、逐token流式仍未验收，不标生产AC全通过。
+
+## 最新增量
+
+T-018线上复现Mock配置缺主密钥，已改为非秘密fixture标记无需主密钥，真实供应商仍加密且共享Mock账号拒真Key。本地浏览器完成生成、任务交互刷新、改色迭代、项目恢复和实际发布，89后端/16前端及构建通过。T-019访客可浏览工作台/项目壳，提交Query后登录并恢复文本，不自动计费执行。T-020DeepSeek按官方当前模型预设及请求错误契约适配，不真实调用。T-021Pipecat STT实时转文字接口/按钮/采样已实现，真实管线用模拟STT通过，真实音频凭证未配置。细节见docs/INCREMENTAL_ACCEPTANCE.md。未推送GitHub或更新Railway；线上仍旧版，公网Mock预览方案待用户决定。
+
+## 固定执行约束
+
+项目安全规则与部署检查项已固化至docs/PREDEPLOY_CHECKLIST.md，AGENTS.md和PROJECT_RULES.md要求每次开发、推送、部署、交付前读取执行。当前Mock页面上线只是阶段交付，不满足最终真实生成→运行交互→持久化闭环的验收。规则以项目自身要求表述，不保留外部材料名称或来源归因。本轮仅修改本地说明文件，未推送GitHub或改Railway配置。
 
 ## 项目扩展字段
 

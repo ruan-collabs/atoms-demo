@@ -141,16 +141,136 @@
 - 变更说明：2026-11-24：双可达及SHA256发布核验、Mock会话和产物生产拒绝、部署说明完善
 - 最后更新：2026-11-24
 
-## T-012 | 依据避坑指南核查Railway部署并安全推送GitHub
+## T-012 | 核查Railway部署并安全推送GitHub
 
 - 状态：已完成
 - 阶段：部署
 - 优先级：P0
-- 验收条件：完整读取指南红线，检查部署与Mock/凭证泄漏，确定仓库和分支，仅推送必要源码并回读commit证据，不执行Railway部署
+- 验收条件：核对安全与交付规则，检查部署与Mock/凭证泄漏，确定仓库和分支，仅推送必要源码并回读commit证据，不执行Railway部署
 - 依赖：无
 - 替代关系：无
 - 执行证据：docs/GITHUB_DELIVERY.md; docs/PREDEPLOY_CHECKLIST.md; https://github.com/ruan-collabs/atoms-demo/commit/951819e07f685286a2da4d73546da18e73591b7c; https://github.com/ruan-collabs/atoms-demo/actions/runs/45317051622
 - 变更说明：2026-11-24：公开仓库main已推送94份审核源码；远端ZIP SHA256逐文件一致；本地70后端/11前端/生产build与GitHub CI含Docker镜像build成功；Railway未部署
+- 最后更新：2026-11-24
+
+## T-013 | 从GitHub源码部署Railway并验证生产上线边界
+
+- 状态：已被替代
+- 阶段：上线
+- 优先级：P0
+- 验收条件：使用ruan-collabs/atoms-demo main创建Railway持久化数据库与三个运行角色，关闭Mock，配置稳定密钥与HTTPS，验证迁移健康和公网；缺认证或通配域时明确阻塞，不冒称完整闭环
+- 依赖：无
+- 替代关系：T-015
+- 执行证据：docs/RAILWAY_DEPLOYMENT_STATUS.md; https://railway.com/project/0df6d4d5-c36e-4762-8817-a853fe4298e2
+- 变更说明：2026-11-24：当前部署目标改为显式Mock演示入口；真实生产完整验收不在本轮执行
+- 最后更新：2026-11-24
+
+## T-014 | 适配Railway新服务不支持Config-as-code的部署规则
+
+- 状态：已完成
+- 阶段：上线
+- 优先级：P0
+- 验收条件：将启动迁移健康规则正确设置到Railway界面，核实用户最新要求的显式development Mock阶段变量，不修改production禁Mock规则
+- 依赖：无
+- 替代关系：无
+- 执行证据：docs/RAILWAY_DEPLOYMENT_STATUS.md; https://atoms-demo-production-57bed089.up.railway.app/api/health
+- 变更说明：2026-11-24：Railway UI已应用python run.py、alembic upgrade head、/api/health；显式development Mock变量已核实，外网健康正常；生产安全规则未改
+- 最后更新：2026-11-24
+
+## T-015 | 发布显式Mock阶段Railway HTTPS演示入口
+
+- 状态：已完成
+- 阶段：演示部署
+- 优先级：P0
+- 验收条件：按用户新要求从GitHub main发布Railway提供的HTTPS入口，数据库健康与前端外网可访问，明确Mock与未验生成预览发布，不接真实身份及用户Key，不改production禁Mock规则
+- 依赖：无
+- 替代关系：无
+- 执行证据：docs/RAILWAY_DEPLOYMENT_STATUS.md; https://atoms-demo-production-57bed089.up.railway.app/dev-test; https://atoms-demo-production-57bed089.up.railway.app/api/health
+- 变更说明：2026-11-24：GitHub main部署成功，浏览器渲染及无账号HTTPS请求页面与静态资源HTTP200，Postgres迁移健康ok，Mock标签清晰，真实身份与生成预览发布未验明确
+- 最后更新：2026-11-24
+
+## T-016 | 固化安全规则与项目验收门禁
+
+- 状态：已完成
+- 阶段：规则
+- 优先级：P0
+- 验收条件：核对项目规则，安全与部署检查项写入维护清单，AGENTS和项目规则指向清单；Mock演示与正式验收区分，不上传非公开资料、不改代码部署
+- 依赖：无
+- 替代关系：无
+- 执行证据：AGENTS.md; PROJECT_RULES.md; docs/PREDEPLOY_CHECKLIST.md; PROJECT_STATE.md
+- 变更说明：2026-11-24：固定红线、最小闭环、部署排查、凭证与额度规则固化到现有清单，AGENTS和项目规则引用，Mock阶段与最终验收区分；未推送或改部署
+- 最后更新：2026-11-24
+
+## T-017 | 移除文档来源归因并保留交付规则
+
+- 状态：已完成
+- 阶段：规则
+- 优先级：P0
+- 验收条件：相关项目文件去除特定材料名称与来源表述；安全规则部署要求验收事实不变，保留历史待办与证据；不修改原始附件或远端
+- 依赖：无
+- 替代关系：无
+- 执行证据：docs/PREDEPLOY_CHECKLIST.md; PROJECT_RULES.md; PROJECT_STATE.md; README.md; TODO.md; docs/GITHUB_DELIVERY.md
+- 变更说明：2026-11-24：项目Markdown中的特定材料名称与来源描述已去除，改为项目检查规则与非公开资料表述；保留安全验收内容和历史待办证据；未修改原始附件或远端
+- 最后更新：2026-11-24
+
+## T-018 | 回归修复Mock演示核心生成预览持久化链路
+
+- 状态：进行中
+- 阶段：验证
+- 优先级：P0
+- 验收条件：实际测试Mock入口、连接保存、生成迭代、可交互预览、刷新恢复；修复缺陷且分别记录本地与Railway结果，不以页面200代替闭环
+- 依赖：无
+- 替代关系：无
+- 执行证据：docs/INCREMENTAL_ACCEPTANCE.md; backend/tests/test_generation.py; .runtime/incremental-smoke.json
+- 变更说明：2026-11-24：Mock沙箱方式已确认，恢复公网核心链路修复验收
+- 最后更新：2026-11-24
+
+## T-019 | 支持未登录浏览核心页及提交Query后登录恢复
+
+- 状态：已完成
+- 阶段：交互
+- 优先级：P0
+- 验收条件：访客可浏览公共工作台和输入需求，提交后无登录才转登录，保留Query并登录后恢复，私有项目接口仍鉴权隔离
+- 依赖：无
+- 替代关系：无
+- 执行证据：docs/INCREMENTAL_ACCEPTANCE.md; frontend/src/lib/pending-query.test.ts; frontend/src/pages/Dashboard.tsx
+- 变更说明：2026-11-24：公共工作台与项目壳匿名可见，提交才登录，Query一次恢复不自动生成；本地浏览器实测与16前端/89后端及构建通过，未上线
+- 最后更新：2026-11-24
+
+## T-020 | 完善DeepSeek官方接口适配且不进行真实调用
+
+- 状态：已完成
+- 阶段：模型
+- 优先级：P0
+- 验收条件：官方base URL请求格式模型错误处理适配并契约单测，不调用真实供应商或绕过已通过的连接门禁，不公开Key
+- 依赖：无
+- 替代关系：无
+- 执行证据：backend/tests/test_provider.py; docs/INCREMENTAL_ACCEPTANCE.md
+- 变更说明：2026-11-24：DeepSeek官方请求模型预设错误与截断契约适配并模拟HTTP单测，无真实模型调用；真实凭证加密保持
+- 最后更新：2026-11-24
+
+## T-021 | 接入Pipecat实现Query语音实时转文字
+
+- 状态：待验收
+- 阶段：语音
+- 优先级：P1
+- 验收条件：用户明确选择语音输入实时转文字，提供安全的Pipecat服务端接入可配置STT凭证、麦克风启停和临时最终文本交互，未配置明确禁用；不自动发送Query，真实联调由凭证配置后验收
+- 依赖：无
+- 替代关系：无
+- 执行证据：backend/tests/test_voice.py; frontend/src/lib/pending-query.test.ts; docs/INCREMENTAL_ACCEPTANCE.md
+- 变更说明：2026-11-24：Pipecat实时语音转文字接口/采样/按钮已实现，真实Pipecat管线配模拟STT测试通过；缺实际语音供应商凭证，真实麦克风端到端未验
+- 最后更新：2026-11-24
+
+## T-022 | 实现Mock专用沙箱预览并上线公网闭环
+
+- 状态：进行中
+- 阶段：演示部署
+- 优先级：P0
+- 验收条件：Mock iframe无same-origin权限，通信验证source与通道，仅持久化白名单应用数据按项目隔离；保留真实模型独立域路径；更新GitHub/Railway Worker并公网回归生成预览恢复迭代发布
+- 依赖：无
+- 替代关系：无
+- 执行证据：待补充
+- 变更说明：2026-11-24：用户已选择Mock专用沙箱预览并授权继续上线验证
 - 最后更新：2026-11-24
 
 <!-- 待办由守门器追加到此处 -->

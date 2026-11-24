@@ -37,7 +37,7 @@ def status_view(config):
         return None
     return {'id':config.id,'provider':config.provider,'base_url':config.base_url,'model':config.model,
             'version':config.version,'enabled':config.enabled,'tested_at':config.tested_at.astimezone(timezone.utc),
-            'key_status':'已加密保存，不可回显','mock':config.provider=='mock'}
+            'key_status':'Mock无凭证，仅fixture标记' if config.provider=='mock' else '已加密保存，不可回显','mock':config.provider=='mock'}
 
 def enabled_config(db,user,config_id=None,version=None):
     config=db.scalar(select(ModelConfiguration).where(ModelConfiguration.owner_id==user.id))
@@ -68,7 +68,7 @@ async def test(body:TestConfiguration,user:User=Depends(current_user),db:Session
     if previous:
         if (previous.provider,previous.base_url,previous.model)!=(body.provider,body.base_url,body.model):raise HTTPException(409,'幂等键已用于不同测试')
         if previous.expires_at<=now():raise HTTPException(409,'测试结果过期，请发起新测试')
-        if body.api_key and previous.ciphertext and body.api_key!=decrypt(previous.ciphertext,user.id,previous.id,'draft'):raise HTTPException(409,'幂等键已用于不同凭证测试')
+        if body.api_key and previous.provider!='mock' and previous.ciphertext and body.api_key!=decrypt(previous.ciphertext,user.id,previous.id,'draft'):raise HTTPException(409,'幂等键已用于不同凭证测试')
         return {'draft_id':previous.id,'status':previous.status,'error':previous.error,'expires_at':previous.expires_at}
     existing=db.scalar(select(ModelConfiguration).where(ModelConfiguration.owner_id==user.id))
     running=db.scalar(select(ModelDraft).where(ModelDraft.owner_id==user.id,ModelDraft.status=='testing',ModelDraft.expires_at>now()))
@@ -78,6 +78,8 @@ async def test(body:TestConfiguration,user:User=Depends(current_user),db:Session
         if body.base_url!='mock://local':raise HTTPException(422,'Mock仅支持本地fixture')
         key='MOCK-NON-SECRET'
     else:
+        if user.email.endswith('@mock.invalid'):
+            raise HTTPException(422,'共享Mock账号不能配置真实Key；请使用真实身份登录')
         if body.provider=='openai' and urlsplit(body.base_url).netloc!='api.openai.com':raise HTTPException(422,'OpenAI预设目标不匹配')
         if body.provider=='deepseek' and urlsplit(body.base_url).netloc!='api.deepseek.com':raise HTTPException(422,'DeepSeek预设目标不匹配')
         await asyncio.to_thread(resolve_target,body.base_url)
@@ -87,7 +89,7 @@ async def test(body:TestConfiguration,user:User=Depends(current_user),db:Session
                 raise HTTPException(422,'新配置或更换供应商需要输入新Key')
             key=decrypt(existing.ciphertext,user.id,existing.id,existing.version)
     draft=ModelDraft(id=uid(),owner_id=user.id,idempotency_key=str(body.idempotency_key),provider=body.provider,base_url=body.base_url,model=body.model,config_version=existing.version if existing else 0,expires_at=now()+timedelta(minutes=15))
-    draft.ciphertext=encrypt(key,user.id,draft.id,'draft');db.add(draft);db.commit()
+    draft.ciphertext='mock-fixture-v1' if body.provider=='mock' else encrypt(key,user.id,draft.id,'draft');db.add(draft);db.commit()
     try:
         if body.provider=='mock':await asyncio.sleep(0.15)
         else:await completion(draft,key,[{'role':'user','content':'Reply with OK only.'}],timeout=15,max_tokens=8)
@@ -111,8 +113,11 @@ def save(body:SaveConfiguration,user:User=Depends(current_user),db:Session=Depen
     if not config:
         config=ModelConfiguration(id=uid(),owner_id=user.id,provider=draft.provider,base_url=draft.base_url,model=draft.model,version=0);db.add(config)
     config.version+=1
-    key=decrypt(draft.ciphertext,user.id,draft.id,'draft')
-    config.ciphertext=encrypt(key,user.id,config.id,config.version);key=''
+    if draft.provider=='mock':
+        config.ciphertext='mock-fixture-v1'
+    else:
+        key=decrypt(draft.ciphertext,user.id,draft.id,'draft')
+        config.ciphertext=encrypt(key,user.id,config.id,config.version);key=''
     config.provider,config.base_url,config.model=draft.provider,draft.base_url,draft.model
     config.enabled=True;config.deleted_at=None;config.tested_at=now()
     draft.status='saved';draft.ciphertext=None;db.commit()

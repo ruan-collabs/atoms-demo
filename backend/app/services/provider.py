@@ -31,12 +31,19 @@ def resolve_target(base_url):
 async def completion(config,key,messages,timeout=45,max_tokens=8192):
     url,hostname=await asyncio.to_thread(resolve_target,config.base_url)
     try:
+        payload={'model':config.model,'messages':messages,'max_tokens':max_tokens,'stream':False}
+        if config.provider=='deepseek':
+            parts=urlsplit(config.base_url)
+            if parts.hostname!='api.deepseek.com' or parts.path.rstrip('/') not in ('','/v1'):
+                raise ProviderError('DeepSeek只支持官方标准API地址','destination')
+            payload['thinking']={'type':'disabled'}
         async with httpx.AsyncClient(timeout=httpx.Timeout(timeout,connect=10),follow_redirects=False,trust_env=False) as client:
             # Host+TLS SNI keep certificate verification for original allowed hostname;
             # actual TCP destination is the public IP just checked above, pinning DNS.
             response=await client.post(url,headers={'Host':hostname,'Authorization':'Bearer '+key,'Content-Type':'application/json'},
-                extensions={'sni_hostname':hostname},json={'model':config.model,'messages':messages,'max_tokens':max_tokens,'stream':False})
+                extensions={'sni_hostname':hostname},json=payload)
         code=response.status_code
+        if code==400:raise ProviderError('模型请求参数无效，请检查模型ID与接口格式','request')
         if code in (401,403):raise ProviderError('模型Key或权限无效，请重新配置','auth')
         if code==402:raise ProviderError('模型账户余额不足','balance')
         if code==404:raise ProviderError('模型或接口不存在，请重新配置','auth')
@@ -44,7 +51,15 @@ async def completion(config,key,messages,timeout=45,max_tokens=8192):
         if 300<=code<400:raise ProviderError('拒绝供应商重定向','destination')
         if code!=200:raise ProviderError(f'上游服务错误（HTTP {code}）','upstream')
         if len(response.content)>2_000_000:raise ProviderError('上游产物超过大小限制','artifact')
-        data=response.json();value=data.get('choices',[{}])[0].get('message',{}).get('content')
+        data=response.json()
+        if not isinstance(data,dict) or not isinstance(data.get('choices'),list) or not data['choices'] or not isinstance(data['choices'][0],dict):
+            raise ProviderError('上游响应结构异常','network')
+        choice=data['choices'][0]
+        if choice.get('finish_reason') not in (None,'stop'):
+            raise ProviderError('模型输出被截断、拒绝或中断，未保存候选','artifact')
+        message=choice.get('message')
+        if not isinstance(message,dict):raise ProviderError('上游响应结构异常','network')
+        value=message.get('content')
         if not isinstance(value,str) or not value.strip():raise ProviderError('上游未返回有效生成文本','artifact')
         if key in value:raise ProviderError('产物疑似包含凭证，已阻止保存','leak')
         return value

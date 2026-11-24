@@ -10,7 +10,7 @@ interface Value {
 const Context=createContext<Value|null>(null);
 export function AppProvider({children}:{children:ReactNode}){
   const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState(''),[meta,setMeta]=useState<Meta|null>(null),[model,setModel]=useState<ModelConfig|null>(null),[modelOpen,setModelOpen]=useState(false);
-  const refreshModel=useCallback(async()=>{const result=await api<{config:ModelConfig|null}>('/model-config');setModel(result.config);},[]);
+  const refreshModel=useCallback(async()=>{const result=await api<{config:ModelConfig|null}>('/model-config');setModel(result.config);if(result.config)setModelOpen(false);},[]);
   const restore=useCallback(async()=>{setLoading(true);setLoadError('');try{
     setMeta(await api<Meta>('/meta'));const profile=await api<User>('/auth/me');const csrf=await api<{csrf_token:string}>('/auth/csrf');setCsrf(csrf.csrf_token);setUser(profile);
     const result=await api<{config:ModelConfig|null}>('/model-config');setModel(result.config);

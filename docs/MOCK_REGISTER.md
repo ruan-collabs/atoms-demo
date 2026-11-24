@@ -5,7 +5,7 @@
 | 编号 | 替代内容 | 位置/开关 | 本地验证 | 上线前必须做 |
 |---|---|---|---|---|
 | M01 | Google/邮件身份验证，固定Alice/Bob测试会话 | /dev-test，/api/dev/mock-login，DEV_MOCK_AUTH=true | 真实平台会话/CSRF/owner后续链路；不验证身份提供方 | DEV_MOCK_AUTH=false，撤销/清理Mock会话与测试账号，填GoogleOAuth或SMTP，真实授权/收码 |
-| M02 | 模型连接测试 | 配置provider=mock，DEV_MOCK_MODEL=true | 服务端草稿/加密/启用/删除真实，最小连接响应模拟 | 禁用DEV_MOCK_MODEL、删除mock配置，用户真实Key服务端测试 |
+| M02 | 模型连接测试 | 配置provider=mock，DEV_MOCK_MODEL=true | 服务端草稿/启用/删除真实，Mock仅保存非秘密fixture标记，不依赖主密钥；加密算法另由独立测试覆盖 | 禁用DEV_MOCK_MODEL、删除mock配置，用户真实Key服务端测试 |
 | M03 | 规划/代码/迭代模型响应 | services/mock_model.py和fixtures/*，页面/产物有Mock标签 | 任务板/作品集两种真实可运行fixture；仅颜色差异迭代 | 真实模型生成两类不同产物与语义迭代；禁止发布Mock构建 |
 | M04 | 上游失败/慢任务/非法产物 | [mock:fail]/[mock:slow]/[mock:invalid] | 失败保护/取消/超时真实平台路径 | 关闭mock模型后这些标记不得作为生产工具；真实上游错误/超时复验 |
 | M05 | 认证/Google/模型网络自动化测试 | tests内monkeypatch、httpx模拟、临时RSA签名 | 算法与业务断言，不访问真实凭证 | 保留测试隔离，不把它当生产OAuth/模型联通验收 |

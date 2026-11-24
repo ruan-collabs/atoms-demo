@@ -26,6 +26,9 @@ def publication_view(p,project):
 def preview(project_id:UUID,user:User=Depends(current_user),db:Session=Depends(get_db)):
     project=owned(db,project_id,user)
     if not project.current_build_id:raise HTTPException(404,'暂无成功构建')
+    build=db.get(BuildArtifact,project.current_build_id)
+    if build and build.artifact.get('mock') and settings.dev_mock_sandbox and not settings.production:
+        return {'url':settings.public_origin+'/mock-preview/'+project.id}
     return {'url':preview_url(project.id,project.current_build_id)}
 
 @router.get('/{project_id}/publication')
@@ -45,6 +48,14 @@ def publish(project_id:UUID,body:Publish,user:User=Depends(current_user),db:Sess
     build=db.get(BuildArtifact,str(body.build_id))
     if not build or not build.validation.get('javascript_syntax'):raise HTTPException(409,'构建未通过校验')
     if build.artifact.get('mock') and settings.production:raise HTTPException(409,'生产禁止发布Mock产物')
+    if build.artifact.get('mock') and settings.dev_mock_sandbox:
+        from app.api.mock_sandbox import trusted_fixture
+        trusted_fixture(build)
+        if not p:p=Publication(id=uid(),project_id=project.id);db.add(p)
+        p.published_build_id=str(body.build_id);p.target_build_id=str(body.build_id);p.job_key=str(body.idempotency_key)
+        p.public_url=settings.public_origin+'/mock-apps/'+project.id
+        p.status='published';p.error=None;p.updated_at=now();db.commit()
+        return publication_view(p,project)
     if not p:p=Publication(id=uid(),project_id=project.id);db.add(p)
     p.target_build_id=str(body.build_id);p.job_key=str(body.idempotency_key);p.status='updating' if p.published_build_id else 'publishing';p.error=None;p.updated_at=now();db.commit()
     return publication_view(p,project)

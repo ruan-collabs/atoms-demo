@@ -4,12 +4,12 @@
 
 ## GitHub 与 Railway 交付
 
-源码仓库： https://github.com/ruan-collabs/atoms-demo 。本次只推送源码和部署配置，尚未完成 Railway 公网部署。部署时使用项目根目录 Dockerfile，Platform、Worker、Application 分别使用 railway.json、railway.worker.json、railway.application.json，另建持久化 PostgreSQL。
+源码仓库： https://github.com/ruan-collabs/atoms-demo 。当前Railway演示与验收状态以 docs/RAILWAY_DEPLOYMENT_STATUS.md 为准。Mock专用沙箱无需自有通配域：无same-origin权限的iframe，仅按账号/项目/预览或公开表面保存白名单任务数据；Mock-only后台可由Platform lifespan启动，生产禁用。真实模型仍使用独立Worker/Application服务，生产域与Secret治理必须另验。
 
 **不要直接把本机 .env、.runtime、数据库、密钥、浏览器自测原始证据上传。** 仓库只包含示例变量和明确标识的Mock实现；生产 APP_ENV=production、DEV_MOCK_AUTH=false、DEV_MOCK_MODEL=false。真实Google/SMTP/模型、独立密钥治理及应用通配域名缺失仍属上线阻塞。完整清单见 docs/PREDEPLOY_CHECKLIST.md 和 docs/MOCK_REGISTER.md。
 
 React + TypeScript + Vite / FastAPI Python3.11 / PostgreSQL / 独立后台Worker。
-按需求V1.2实现，另按用户要求保留Google OAuth；私密需求与招聘材料不随公开仓库提交。
+按需求V1.2实现，另按用户要求保留Google OAuth；非公开资料不随公开仓库提交。
 
 ## 当前能力与真实边界
 
@@ -17,7 +17,7 @@ React + TypeScript + Vite / FastAPI Python3.11 / PostgreSQL / 独立后台Worker
 
 本机启用用户明确授权的开发Mock登录、模型连接及模型fixture。Mock登录不是Google/邮箱身份验证；Mock产物不是AI模型生成。数据库、Worker、事务、加密、构建保存、浏览器真实运行与发布指针不是Mock。真实模型路径使用用户加密保存的Key，仅调用绑定允许HTTPS供应商；失败不会自动切Mock或平台Key。
 
-**本地Mock闭环通过不等于真实生产P0的45条验收全部通过。** 真实Google/SMTP、真实模型上游、生产密钥治理、DNS/TLS、Railway部署尚未配置，清单见 docs/MOCK_REGISTER.md。自测说明见 docs/SELF_TEST.md；原始浏览器证据和HTML报告仅本地保留，不公开提交。当前GitHub CI单测、前端build与Docker镜像build通过，详见 docs/GITHUB_DELIVERY.md；真实生产链路仍未验收。
+**本地Mock闭环通过不等于真实生产P0的45条验收全部通过。** 最新本地增量回归与真实供应商限制见 docs/INCREMENTAL_ACCEPTANCE.md；原始浏览器证据和HTML报告仅本地保留，不公开提交。当前GitHub CI单测、前端build与Docker镜像build通过，详见 docs/GITHUB_DELIVERY.md；真实生产链路仍未验收。
 
 ## 本地运行
 
@@ -52,6 +52,6 @@ bash scripts/test.sh运行后端真实临时PostgreSQL集成测试、前端单�
 
 UI证据由实际浏览器点击/输入/刷新获取，docs/evidence/*.txt不是自动伪造断言；截图是浏览器实测。测试中的上游网络/Google交换模拟清楚登记，不计为真实上游已接通。
 
-Railway参见 docs/RAILWAY.md。v0.2拓扑需平台+Worker+隔离应用服务（可共用Application服务绑定两套独立wildcard域）+PostgreSQL。真实公网部署需要用户账户、DNS/TLS和SecretManager；本轮未创建付费服务或声称在线。
+Railway参见 docs/RAILWAY.md 和 docs/RAILWAY_DEPLOYMENT_STATUS.md。演示开启 DEV_MOCK_SANDBOX=true、DEV_INLINE_WORKER=true 时仅运行Mock fixture任务，正式切production必须关闭。真实模型拓扑需要独立Worker/Application安全源和稳定Secret。语音实时转文字通过Pipecat STT-only管线，配置VOICE_ENABLED与DEEPGRAM_API_KEY后才能真实联调；本轮未执行真实DeepSeek或真实语音调用。
 
 新增需求先入TODO；每次schema更新新增Alembic版本。不可自动删除生产数据或改写已应用迁移；备份/expand-contract迁移后再部署。Mock注册、生产待办和验收情况都在docs/SELF_TEST.md中。

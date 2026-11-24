@@ -9,11 +9,26 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from app.config import settings
 from app.db import engine
-from app.api import auth, projects, google_auth, dev, model_config, generation, publication
+from app.api import auth, projects, google_auth, dev, model_config, generation, publication, voice, mock_sandbox
 from app.services.credentials import CredentialError
 from app.services.provider import ProviderError
 
-app = FastAPI(title='Atoms Demo API', version='0.2.0', docs_url='/api/docs' if not settings.production else None, openapi_url='/api/openapi.json' if not settings.production else None, redoc_url=None)
+import asyncio
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+    task=None
+    if settings.dev_inline_worker and not settings.production and settings.dev_mock_model:
+        from app.worker import main as worker_main
+        task=asyncio.create_task(worker_main(mock_only=True))
+    try:yield
+    finally:
+        if task:
+            task.cancel()
+            await asyncio.gather(task,return_exceptions=True)
+
+app = FastAPI(lifespan=lifespan,title='Atoms Demo API', version='0.2.0', docs_url='/api/docs' if not settings.production else None, openapi_url='/api/openapi.json' if not settings.production else None, redoc_url=None)
 app.add_middleware(CORSMiddleware, allow_origins=[settings.public_origin], allow_credentials=True,
                    allow_methods=['GET', 'POST', 'PATCH', 'OPTIONS'], allow_headers=['Content-Type', 'X-CSRF-Token'])
 
@@ -26,15 +41,17 @@ async def secure_headers(request: Request, call_next):
     response.headers['X-Request-ID'] = str(uuid4())
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'no-referrer'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+    if not request.url.path.startswith('/api/mock-sandbox/'):
+        response.headers['X-Frame-Options'] = 'DENY'
+    if not request.url.path.startswith('/api/mock-sandbox/'):
+        response.headers['Permissions-Policy'] = 'camera=(), microphone=(self), geolocation=()'
     if request.url.path.startswith('/api/'):
         response.headers['Cache-Control'] = 'no-store'
     else:
-        connect = "'self'"
+        connect = "'self' "+settings.public_origin.replace('https://','wss://').replace('http://','ws://')
         if not settings.production:
             connect += ' ws://localhost:5173 ws://127.0.0.1:5173'
-        response.headers['Content-Security-Policy'] = f"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src {connect}; frame-src {settings.preview_origin.replace('://','://*.')}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+        response.headers['Content-Security-Policy'] = f"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src {connect}; frame-src 'self' {settings.preview_origin.replace('://','://*.')}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
     if settings.production:
         response.headers['Strict-Transport-Security'] = 'max-age=31536000'
     return response
@@ -70,7 +87,7 @@ def health():
 def meta():
     return {'version': '0.2.0', 'stage': 'V1.2构建平台', 'mail_mode': settings.mail_mode,
             'model_allowed_origins': settings.allowed_model_origins,
-            'features': {'mock_auth':settings.dev_mock_auth and not settings.production,'mock_model':settings.dev_mock_model and not settings.production,'google_login': settings.google_enabled, 'projects': True, 'messages': True, 'model_connection_test': True, 'generation': True, 'preview': True, 'publication': True}}
+            'features': {'mock_auth':settings.dev_mock_auth and not settings.production,'mock_model':settings.dev_mock_model and not settings.production,'google_login': settings.google_enabled, 'projects': True, 'messages': True, 'model_connection_test': True, 'mock_sandbox':settings.dev_mock_sandbox and not settings.production, 'generation': True, 'preview': True, 'publication': True}}
 
 app.include_router(auth.router, prefix='/api')
 app.include_router(google_auth.router, prefix='/api')
@@ -79,10 +96,26 @@ app.include_router(dev.router,prefix='/api')
 app.include_router(model_config.router,prefix='/api')
 app.include_router(generation.router,prefix='/api')
 app.include_router(publication.router,prefix='/api')
+app.include_router(voice.router,prefix='/api')
+app.include_router(mock_sandbox.router,prefix='/api')
+
+@app.get('/mock-sandbox-child.js',include_in_schema=False)
+def mock_sandbox_child():
+    path=Path(settings.frontend_dist).resolve()/'mock-sandbox-child.js'
+    if not path.is_file():return JSONResponse(status_code=404,content={'detail':'沙箱资源未构建'})
+    response=FileResponse(path,media_type='application/javascript')
+    response.headers['Access-Control-Allow-Origin']='*'
+    return response
 
 DIST = Path(settings.frontend_dist).resolve()
 if (DIST / 'assets').is_dir():
     app.mount('/assets', StaticFiles(directory=DIST / 'assets'), name='assets')
+
+@app.get('/voice-worklet.js', include_in_schema=False)
+def voice_worklet():
+    path=Path(settings.frontend_dist).resolve()/'voice-worklet.js'
+    if not path.is_file():return JSONResponse(status_code=404,content={'detail':'语音资源未构建'})
+    return FileResponse(path,media_type='application/javascript')
 
 @app.api_route('/{path:path}', methods=['GET', 'HEAD'], include_in_schema=False)
 def spa(path: str):

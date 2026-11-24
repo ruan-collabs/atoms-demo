@@ -1,6 +1,12 @@
 # Railway V1.2部署
 
-## 服务拓扑
+## Mock演示部署
+
+用户明确授权的演示环境使用APP_ENV=development、DEV_MOCK_AUTH=true、DEV_MOCK_MODEL=true、DEV_MOCK_SANDBOX=true、DEV_INLINE_WORKER=true、MAIL_MODE=disabled。Platform使用根Dockerfile、python run.py、alembic upgrade head、/api/health；DATABASE_URL引用持久化Postgres，PUBLIC_ORIGIN为Railway提供的精确HTTPS域。
+
+Mock无真实Key，仅fixture标记；后台仅消费Mock任务，不需要生产主密钥或独立Application服务。预览与分享在opaque-origin iframe中执行，只提供任务数据白名单桥，不授予平台身份能力。该例外不用于真实模型；production拒绝上述开关。语音凭证未配置时保持VOICE_ENABLED=false。
+
+## 服务拓扑（真实模型）
 
 1. Platform：根Dockerfile，railway.json；React静态托管+FastAPI8000，读取PORT。
 2. Worker：同Dockerfile，选择railway.worker.json；启动python -m app.worker，无公共入口。

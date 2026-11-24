@@ -57,7 +57,11 @@ async def execute(run_id,token):
             message=db.get(Message,run.message_id);project=db.get(Project,run.project_id)
             base=db.get(BuildArtifact,run.base_build_id) if run.base_build_id else None
             base_html=base.artifact['html'] if base else None
-            key=decrypt(config.ciphertext,config.owner_id,config.id,config.version)
+            if config.provider=='mock':
+                if settings.production or not settings.dev_mock_model:raise ProviderError('Mock模型已禁用','scope')
+                key='MOCK-NON-SECRET'
+            else:
+                key=decrypt(config.ciphertext,config.owner_id,config.id,config.version)
             prompt=message.content
             provider=config.provider
             # Detached config snapshot, never store plaintext on a queue/run.
@@ -136,23 +140,25 @@ def commit_candidate(run_id,token=None):
         db.add(Message(project_id=project.id,idempotency_key=__import__('hashlib').sha256((run.id+':result').encode()).hexdigest()[:36],role='assistant',content=f"构建助手{' [Mock]' if artifact.artifact['mock'] else ''}\n构建 {artifact.number} 已保存。验证范围：HTML结构、JS语法、外部资源限制；功能行为请在预览中验证。本浏览器应用数据不承诺云同步。"))
         db.commit()
 
-def maintenance_and_claim():
+def maintenance_and_claim(mock_only=False):
     with SessionLocal() as db:
         for draft in db.scalars(select(ModelDraft).where(ModelDraft.expires_at<now(),ModelDraft.ciphertext.is_not(None))):
             draft.ciphertext=None;draft.status='expired'
         for stale in db.scalars(select(GenerationRun).where(GenerationRun.status.in_(ACTIVE),GenerationRun.lease_expires_at<now()).with_for_update(skip_locked=True)):
             stale.status='interrupted';stale.error='Worker租约过期，未知上游结果不会自动重放';stale.finished_at=now();add_event(stale,'interrupted',stale.error)
-        run=db.scalar(select(GenerationRun).where(GenerationRun.status=='queued').order_by(GenerationRun.created_at).with_for_update(skip_locked=True).limit(1))
+        query=select(GenerationRun).where(GenerationRun.status=='queued')
+        if mock_only:query=query.where(GenerationRun.provider=='mock')
+        run=db.scalar(query.order_by(GenerationRun.created_at).with_for_update(skip_locked=True).limit(1))
         if not run:db.commit();return None
         run.worker_token=uid();run.status='planning';run.lease_expires_at=now()+timedelta(seconds=settings.lease_seconds);db.commit();return run.id,run.worker_token
 
-async def main():
+async def main(mock_only=False):
     print('Atoms Worker ready; durable Postgres queue; no request/key logging',flush=True)
     while True:
         try:
             from app.api.publication import process_publication
-            await process_publication()
-            job=maintenance_and_claim()
+            if not mock_only:await process_publication()
+            job=maintenance_and_claim(mock_only=mock_only)
             if job:await execute(*job)
             else:await asyncio.sleep(settings.worker_poll_seconds)
         except asyncio.CancelledError:raise
