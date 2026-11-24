@@ -70,6 +70,12 @@ def test_task_css_identifier_not_key(monkeypatch):
     assert run_stream()[0]==text
 
 
+def test_task_identifier_split_at_holdback_boundary(monkeypatch):
+    text='x'*99+'ta'+'sk-'+'x'*510
+    mock_stream(monkeypatch,frames([text[:613],text[613:]]),{})
+    assert run_stream()[0]==text
+
+
 def test_standalone_key_prefix_still_blocked(monkeypatch):
     mock_stream(monkeypatch,frames(['<p>sk-','unexpectedsecret</p>']),{})
     with pytest.raises(ProviderError) as error:run_stream()

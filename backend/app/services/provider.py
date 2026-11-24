@@ -101,14 +101,16 @@ async def stream_completion(config, key, messages, on_delta, timeout=60, max_tok
     hold = max(512, len(key) + 16)
     leak_pattern = re.compile(r'(?<![A-Za-z0-9_-])(?:sk-|Bearer\s+)',re.I)
 
+    boundary = ''
     async def emit(text, flush=False):
-        nonlocal tail
+        nonlocal tail, boundary
         tail += text
-        if (key and key in tail) or leak_pattern.search(tail):
+        if (key and key in tail) or leak_pattern.search(boundary+tail,len(boundary)):
             raise ProviderError('产物疑似包含凭证，已阻止输出与保存', 'leak')
         count = len(tail) if flush else max(0, len(tail) - hold)
         if count:
             safe, tail = tail[:count], tail[count:]
+            boundary=(boundary+safe)[-32:]
             await on_delta(safe)
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(timeout, connect=10), follow_redirects=False, trust_env=False) as client:
