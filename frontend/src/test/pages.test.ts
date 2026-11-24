@@ -13,7 +13,7 @@ const render=(component:React.ComponentType)=>renderToStaticMarkup(createElement
 
 describe('page-shell contract (component tests, not browser E2E)',()=>{
   it('shows Google login disabled when OAuth configuration is missing',()=>{state.user=null;state.meta.features.google_login=false;const html=render(LoginPage);expect(html).toContain('使用 Google 登录');expect(html).toContain('待配置');expect(html).not.toContain('不支持第三方登录');});
-  it('marks developer mailbox and disables sending until terms accepted',()=>{state.user=null;const html=render(LoginPage);expect(html).toContain('不会发送真实邮件');expect(html).toContain('发送邮箱验证码');expect(html).toContain('disabled');});
+  it('only shows Google business login and visitor browse, not email or Mock entry',()=>{state.user=null;const html=render(LoginPage);expect(html).toContain('目前仅支持 Google 登录');expect(html).toContain('先浏览工作台');expect(html).not.toContain('发送邮箱验证码');expect(html).not.toContain('type="email"');expect(html).not.toContain('href="/dev-test"');});
   it('authenticated unconfigured user receives gate not project content',()=>{state.user={id:'fixture',email:'fixture@example.com'};state.modelOpen=false;const html=render(ProtectedLayout);expect(html).toContain('先连接你的模型');expect(html).not.toContain('最近的项目');});
   it('closed modal does not remove gate and logout remains available',()=>{state.modelOpen=false;const html=render(ProtectedLayout);expect(html).toContain('配置模型');expect(html).toContain('退出登录');});
   it('guest can see dashboard and query field without login redirect',()=>{state.user=null;const html=render(DashboardPage);expect(html).toContain('你想创造什么');expect(html).toContain('应用需求');expect(html).toContain('发送后登录');});

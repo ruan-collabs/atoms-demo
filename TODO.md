@@ -407,14 +407,26 @@
 
 ## T-034 | 排查最近生成失败并增加最多三次有界自动重试
 
-- 状态：进行中
+- 状态：已完成
 - 阶段：修复上线
 - 优先级：P0
 - 验收条件：回读最近两次失败项目与Railway Worker/平台日志定位原因；修复输出截断/契约问题并测试；首次失败后最多3次有界自动重试，退避、取消/配置版本/预算/租约有效，安全拒绝不降级、未知计费不盲重放；同步源码并上线回读
 - 依赖：无
 - 替代关系：无
-- 执行证据：backend/tests/test_generation_retry.py; backend/tests/test_stream_provider.py; https://atoms-demo-production-57bed089.up.railway.app/projects/ab065566-2556-4c99-8006-b7c9a33e3e33
-- 变更说明：2026-11-24：Railway平台/Worker启动正常无崩溃；失败笔记项目两次规划与末次25秒截断错误已回读。代码8K上限与localStorage规划冲突已修复；3次共享有界重试/脱敏原因日志实现，137后端32前端/build/迁移检查通过，准备上线与有限真实重试
+- 执行证据：backend/tests/test_generation_retry.py; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://github.com/ruan-collabs/atoms-demo/actions/runs/45422147983; https://atoms-demo-production-57bed089.up.railway.app/projects/ab065566-2556-4c99-8006-b7c9a33e3e33
+- 变更说明：2026-11-24：Worker/Platform日志正常、末次输出中途截断和8K限额及localStorage规划冲突已定位修复；3次共享有界自动重试、安全错误与未知计费不重放、脱敏日志已部署071e1f3。137后端32前端/build/迁移与CI成功，原失败笔记构建1新增标签及刷新恢复通过；重试故障用隔离替身测试，不冒称真实故障现场
 - 最后更新：2026-11-24
+
+## T-035 | 收敛Google登录页与DeepSeek模型入口并上线
+
+- 状态：待验收
+- 阶段：交互上线
+- 优先级：P1
+- 验收条件：登录页只提供Google业务登录，移除邮箱表单与其他业务入口；模型默认DeepSeek，其他供应商禁用且hover/键盘焦点提示模型未上线；不破坏既有会话/配置/Mock测试专用入口；组件测试构建与Railway界面回读
+- 依赖：无
+- 替代关系：无
+- 执行证据：frontend/src/components/model-availability.test.ts; backend/tests/test_model_availability.py; frontend/src/pages/Login.tsx
+- 变更说明：2026-11-25：Google-only登录页、默认DeepSeek与OpenAI/custom禁用hover/焦点提示、真实账号隐藏Mock选择及后端新配置拒绝已实现；36前端139后端/build与迁移检查通过，准备GitHub/Railway同步，保留既有会话配置
+- 最后更新：2026-11-25
 
 <!-- 待办由守门器追加到此处 -->

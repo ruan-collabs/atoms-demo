@@ -62,6 +62,7 @@ def get_config(user:User=Depends(current_user),db:Session=Depends(get_db)):
 
 @router.post('/test')
 async def test(body:TestConfiguration,user:User=Depends(current_user),db:Session=Depends(get_db)):
+    if body.provider in ('openai','custom'):raise HTTPException(422,'模型未上线，目前仅支持DeepSeek')
     if not body.consent:raise HTTPException(422,'请确认测试费用与数据传输')
     advisory_lock(db,'model:'+user.id);config_not_running(db,user)
     previous=db.scalar(select(ModelDraft).where(ModelDraft.owner_id==user.id,ModelDraft.idempotency_key==str(body.idempotency_key)))
@@ -107,6 +108,7 @@ def save(body:SaveConfiguration,user:User=Depends(current_user),db:Session=Depen
     advisory_lock(db,'model:'+user.id);config_not_running(db,user)
     draft=db.scalar(select(ModelDraft).where(ModelDraft.id==str(body.draft_id),ModelDraft.owner_id==user.id).with_for_update())
     if not draft or draft.status!='passed' or draft.expires_at<=now() or not draft.ciphertext:raise HTTPException(409,'测试草稿无效或过期，请重测')
+    if draft.provider in ('openai','custom'):raise HTTPException(422,'模型未上线，目前仅支持DeepSeek')
     config=db.scalar(select(ModelConfiguration).where(ModelConfiguration.owner_id==user.id))
     if (config.version if config else 0)!=draft.config_version:raise HTTPException(409,'配置版本冲突，请重新测试')
     if draft.provider=='mock' and (settings.production or not settings.dev_mock_model):raise HTTPException(422,'Mock模型已禁用')
