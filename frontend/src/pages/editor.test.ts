@@ -21,7 +21,7 @@ describe('editor component interactions, not browser E2E',()=>{
  it('shows blocked state without fake code and service check is read only',async()=>{
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);const container=document.createElement('div');document.body.append(container);root=createRoot(container);
   await act(async()=>root!.render(createElement(MemoryRouter,null,createElement(EditorPage))));
-  expect(container.textContent).toContain('尚未开始生成');expect(container.textContent).toContain('生成服务未就绪');
+  expect(container.textContent).toContain('旧需求待确认');expect(container.textContent).toContain('旧需求等待重新确认');
   const check=Array.from(container.querySelectorAll('button')).find(x=>x.textContent==='检查服务')!;
   await act(async()=>check.click());expect(state.calls.every(x=>x.startsWith('GET '))).toBe(true);
   const send=container.querySelector<HTMLButtonElement>('[aria-label="发送修改需求"]')!;expect(send.disabled).toBe(true);expect(send.previousElementSibling?.getAttribute('aria-label')).toBe('开始语音输入');

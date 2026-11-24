@@ -183,6 +183,7 @@ def maintenance_and_claim(mock_only=False):
         from sqlalchemy import or_
         query=query.where(or_(GenerationRun.provider=='mock',GenerationRun.dispatch_version==1))
         if mock_only:query=query.where(GenerationRun.provider=='mock')
+        elif not settings.dev_mock_model:query=query.where(GenerationRun.provider!='mock')
         run=db.scalar(query.order_by(GenerationRun.created_at).with_for_update(skip_locked=True).limit(1))
         if not run:db.commit();return None
         run.worker_token=uid();run.status='planning';run.lease_expires_at=now()+timedelta(seconds=settings.lease_seconds);db.commit();return run.id,run.worker_token

@@ -80,6 +80,14 @@ def test_real_dispatch_uses_stream_callback_and_saves(client,login,monkeypatch):
         run=db.get(GenerationRun,job[0]);assert run.stream_text==html and run.stream_bytes==len(html.encode())
 
 
+def test_worker_mock_disabled_does_not_claim_fixture(client,login,monkeypatch):
+    from app.config import settings
+    login(client);pid=create(client)
+    monkeypatch.setattr(settings,'dev_mock_model',False)
+    assert maintenance_and_claim() is None
+    assert snapshot(client,pid)['run']['status']=='queued'
+
+
 def test_preview_and_publication_readiness_separate(client,login):
     login(client);heartbeat(str(uuid.uuid4()),'application')
     state=client.get('/api/projects/generation/service-status').json()
