@@ -1,6 +1,10 @@
 # 核心生成交互开发记录（T-030）
 
-## 本轮范围
+## 后续上线与真实验收补充（2026-11-24）
+
+三态开发已同步GitHub并部署Railway，独立真实Worker已上线；用户接受同域path包装+opaque iframe方案替代强制wildcard。真实DeepSeek输出已完成构建保存、任务新增/完成/删除/刷新、紫色主题迭代构建2、稳定URL发布更新与独立公开数据保留。最新应用源码c3e18b0、CI45410356880成功，122后端/27前端/build及迁移检查通过。详细结果以APPLICATION_SANDBOX_ACCEPTANCE.md及RAILWAY_DEPLOYMENT_STATUS.md为准，下文为本地开发历史，不用旧“未推/未部署”覆盖最新证据。
+
+## 原本地开发范围
 
 用户已确认三态设计并要求开始开发。本轮完成本地源码增量与验证，未推送GitHub、未更新Railway、未新增云服务、未调用真实DeepSeek或录音。线上目前的真实Worker/Application缺失仍需后续部署解决，不能据本地通过宣称线上已修复。
 

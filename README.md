@@ -6,7 +6,9 @@
 
 源码仓库： https://github.com/ruan-collabs/atoms-demo 。当前Railway演示与验收状态以 docs/RAILWAY_DEPLOYMENT_STATUS.md 为准。Mock专用沙箱无需自有通配域：无same-origin权限的iframe，仅按账号/项目/预览或公开表面保存白名单任务数据；Mock-only后台可由Platform lifespan启动，生产禁用。真实模型使用独立Worker；应用运行可选独立源Application或APPLICATION_SANDBOX=true的opaque iframe，二者需独立验收，不能仅换path当隔离。
 
-**不要直接把本机 .env、.runtime、数据库、密钥、浏览器自测原始证据上传。** 仓库只包含示例变量和明确标识的Mock实现；生产 APP_ENV=production、DEV_MOCK_AUTH=false、DEV_MOCK_MODEL=false。真实Google/SMTP/模型、独立密钥治理及应用通配域名缺失仍属上线阻塞。完整清单见 docs/PREDEPLOY_CHECKLIST.md 和 docs/MOCK_REGISTER.md。
+**真实核心链路已验证，完整production验收仍未完成。** 用户Google会话和用户DeepSeek配置经独立Worker完成规划/流式代码，opaque iframe可新增/完成/删除并刷新恢复；主题迭代构建2及稳定/apps链接发布更新通过。项目/消息/密文配置/构建/发布保存在PostgreSQL；生成应用的受限JSON数据仅当前浏览器、分项目与private/public保存，不承诺云同步。现场结果与未验范围见 docs/APPLICATION_SANDBOX_ACCEPTANCE.md 和 docs/RAILWAY_DEPLOYMENT_STATUS.md。
+
+**不要直接把本机 .env、.runtime、数据库、密钥、浏览器自测原始证据上传。** 仓库只包含示例变量和明确标识的Mock实现；生产 APP_ENV=production、DEV_MOCK_AUTH=false、DEV_MOCK_MODEL=false。当前仍为用户授权development演示，保留Mock入口但真实任务不降级Mock；生产密钥权限/备份治理、第二类真实应用和完整安全验收仍待补齐。opaque方案不要求自有通配域，但必须验证实际隔离。完整清单见 docs/PREDEPLOY_CHECKLIST.md 和 docs/MOCK_REGISTER.md。
 
 React + TypeScript + Vite / FastAPI Python3.11 / PostgreSQL / 独立后台Worker。
 按需求V1.2实现，另按用户要求保留Google OAuth；非公开资料不随公开仓库提交。
@@ -56,7 +58,7 @@ Railway参见 docs/RAILWAY.md 和 docs/RAILWAY_DEPLOYMENT_STATUS.md。演示开�
 
 新增需求先入TODO；每次schema更新新增Alembic版本。不可自动删除生产数据或改写已应用迁移；备份/expand-contract迁移后再部署。Mock注册、生产待办和验收情况都在docs/SELF_TEST.md中。
 
-## 核心交互增量 T-030（本地开发，尚未更新Railway）
+## 核心交互增量 T-030（历史本地开发，后续已部署）
 
 预览/代码/活动三视图、结构化需求摘要、真实阶段反馈、桌面/手机预览宽度、模型与发布状态门禁已实现。无可用Worker时拒绝创建新任务并保留输入；Worker心跳每5秒刷新，20秒过期。Application与publication独立角色分别设置APPLICATION_ROLE。心跳只证明进程可用，不证明DNS/TLS或供应商成功。
 

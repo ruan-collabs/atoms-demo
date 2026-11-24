@@ -2,6 +2,10 @@
 
 本轮用户明确授权Mock完成本地开发验收。Mock永远公开标识、不做真实服务兜底；生产启动强制关闭。
 
+## 当前非Mock真实链路（2026-11-24）
+
+真实Google用户与已启用DeepSeek配置由独立Railway Worker生成规划/代码，实际构建1及真实紫色主题迭代构建2已保存；任务新增/完成/删除/刷新与稳定/apps链接发布更新通过。APPLICATION_SANDBOX是针对非信任真实HTML的独立契约，不是扩大M10 fixture例外。真实代码含Promise保存经无模型重新校验复用，并非平台造固定产物。详见APPLICATION_SANDBOX_ACCEPTANCE.md。Mock入口仍development显式保留；独立真实Worker不领取Mock任务，失败不切Mock。火山语音已接入但完整interim/final仍待验。以下旧“真实模型未调用”是历史范围。
+
 最新Google登录增量：Railway bf0f60d已配置Google并真实账号授权/退出/重登通过，详见GOOGLE_LOGIN.md。M01仅指保留的共享演示登录路径，不再代表Google真实授权尚未接通；邮件仍disabled。真实模型与语音没有调用，production仍禁Mock。
 
 最新演示范围：用户明确接受Mock专用opaque-origin沙箱，Railway已部署e2246a9并通过Mock公网闭环；以下M07/M09保留首次本地阶段描述，最新结果以RAILWAY_DEPLOYMENT_STATUS.md为准。真实生产域、模型、认证与密钥治理不由演示验收替代。

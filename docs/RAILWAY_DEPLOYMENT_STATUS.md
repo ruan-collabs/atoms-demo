@@ -1,4 +1,22 @@
-# Railway Mock 阶段部署记录
+# Railway 部署与分阶段验收记录
+
+## 当前真实核心链路（2026-11-24，T-030 / T-031 / T-032）
+
+Platform与独立atoms-worker均已上线c3e18b0，CI45410356880成功；平台先迁移a7c932e108df，Worker无公网入口，关所有Mock消费开关，不自动消费历史version0排队。APPLICATION_SANDBOX=true，Railway自带域名的/apps与/preview只是包装，生成HTML在opaque iframe运行，响应CSP及iframe均不含allow-same-origin。固定ZIP133份应用源码一致，仅本地收尾账本领先；最终122后端/27前端/build/Alembic check通过。
+
+真实Google用户的已启用DeepSeek配置完成规划与流式代码生成。修复目标允许名单空引用、task类名的凭证模式误判、holdback边界和Promise保存契约误判；没有明文Key兜底、没有关闭出站或CSP。既有完整模型产物通过无模型调用重新校验保存为构建1；任务新增/完成/刷新恢复实测通过，真实主题迭代构建2保留原数据，新增删除刷新通过；公开发布更新原URL不变，公开记录刷新保留、与私人数据独立。独立无登录web_fetch读取public元数据成功（mock=false）。详见APPLICATION_SANDBOX_ACCEPTANCE.md。
+
+应用：https://atoms-demo-production-57bed089.up.railway.app/apps/03d682c4-fdcd-490f-8fb4-6b69c98eb154
+
+平台：https://atoms-demo-production-57bed089.up.railway.app/dashboard
+
+源码：https://github.com/ruan-collabs/atoms-demo/commit/c3e18b0ab7b1c8ca882a5ac206a0a971cae83b94
+
+CI：https://github.com/ruan-collabs/atoms-demo/actions/runs/45410356880
+
+容器重部署后恢复本轮仍待核验；第二类真实应用、真实语音完整事件、存储失败/对抗路径、无痕GUI及手机流量仍待验，生产KMS/权限/备份治理未完成。APP_ENV仍development，Google真实路径与Mock演示入口并存，不声称45条production验收全通过。生成应用数据只当前浏览器保存，不云同步；项目/消息/密文配置/构建/发布持久化PostgreSQL。未升级套餐或清库、未更换稳定Key。
+
+## 以下为历史部署记录，不代表当前状态
 
 ## Google登录增量（2026-11-24）
 

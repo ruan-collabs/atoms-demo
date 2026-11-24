@@ -359,38 +359,38 @@
 
 ## T-030 | 实现已确认核心生成交互与真实执行门禁
 
-- 状态：待验收
+- 状态：已完成
 - 阶段：开发
 - 优先级：P0
 - 验收条件：执行器心跳与无服务门禁，旧queued不自动消费；真实DeepSeek内容流式及脱敏事件，三视图状态UI，独立源预览；保留认证模型语音规则；自动化与本地浏览器闭环分别验收，未部署不称线上已修复
 - 依赖：无
 - 替代关系：无
-- 执行证据：docs/CORE_INTERACTION_DEVELOPMENT.md; backend/tests/test_readiness.py; backend/tests/test_stream_provider.py; frontend/src/pages/editor.test.ts
-- 变更说明：2026-11-24：本地三视图/Worker门禁/真实流式协议/旧queued保护已实现；109全后端、最后42核心后端、25前端、build与迁移检查通过；浏览器Mock新增刷新迭代失败保护通过；真实供应商与Railway未执行
+- 执行证据：docs/CORE_INTERACTION_DEVELOPMENT.md; docs/APPLICATION_SANDBOX_ACCEPTANCE.md; https://github.com/ruan-collabs/atoms-demo/actions/runs/45410356880
+- 变更说明：2026-11-24：三态交互和持久流式恢复已实现并部署；真实生成运行及主题迭代通过。应用运行方案依用户D-012改为opaque iframe，完整扩展验收由T-032继续
 - 最后更新：2026-11-24
 
 ## T-031 | 同步核心交互源码并部署真实Worker角色
 
-- 状态：进行中
+- 状态：已完成
 - 阶段：上线
 - 优先级：P0
 - 验收条件：安全同步公开GitHub固定commit并核验CI/Railway迁移；独立Worker引用稳定密钥与数据库，不读取Key或消费旧version0排队；真实预览域TLS缺失如实阻塞，不放宽隔离；公网界面与真实执行分别验收
 - 依赖：无
 - 替代关系：无
-- 执行证据：待补充
-- 变更说明：2026-11-24：用户要求继续部署；复用现有Railway项目，先同步代码迁移，再创建独立角色，不升级套餐或清库
+- 执行证据：docs/RAILWAY_DEPLOYMENT_STATUS.md; docs/APPLICATION_SANDBOX_ACCEPTANCE.md; https://github.com/ruan-collabs/atoms-demo/actions/runs/45410356880
+- 变更说明：2026-11-24：固定133份应用源码核验、CI成功，Platform与独立真实Worker同版本Active、迁移健康；旧queued未自动消费、Worker无公网，部署收尾记录已更新
 - 最后更新：2026-11-24
 
 ## T-032 | 实现真实生成应用的同域入口隔离沙箱
 
-- 状态：进行中
+- 状态：待验收
 - 阶段：开发上线
 - 优先级：P0
 - 验收条件：Railway path包装入口；生成HTML在opaque iframe运行无same-origin；专用受限JSON存储桥ACK后保存、owner/project/public隔离；不传会话Key平台API、Mock仍严格fixture；安全及真实生成交互回归，部署证据分别记录
 - 依赖：无
 - 替代关系：无
-- 执行证据：待补充
-- 变更说明：2026-11-24：用户明确同意无自有域名安全沙箱替代通配域方案，保留Worker及稳定密钥；不以path本身作为隔离
+- 执行证据：docs/APPLICATION_SANDBOX_ACCEPTANCE.md; https://atoms-demo-production-57bed089.up.railway.app/apps/03d682c4-fdcd-490f-8fb4-6b69c98eb154
+- 变更说明：2026-11-24：真实生成任务新增完成删除刷新、主题迭代及公开稳定URL更新通过；继续容器重部署恢复核验，第二类真实需求和存储失败/对抗路径仍待验
 - 最后更新：2026-11-24
 
 <!-- 待办由守门器追加到此处 -->

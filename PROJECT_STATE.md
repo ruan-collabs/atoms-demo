@@ -1,15 +1,21 @@
 # 项目状态
 
 - 项目名称：Atoms
-- 项目目标：建立 React + Python + PostgreSQL 的 Railway 可部署基础框架，支持后续增量迭代
-- 当前阶段：核心生成交互本地开发完成，云部署与真实供应商闭环待验收
-- 当前焦点：T-030本地增量收尾；T-005/T-008真实执行与隔离预览上线
-- 阻塞事项：Railway真实Worker与Application未部署；域名TLS待配置，未调用真实DeepSeek
-- 待验收范围：真实生成/预览/发布公网闭环、真实语音完整事件与模型连接测试、生产Secret治理
-- 下一步：同步必要源码与追加迁移后，配置独立Worker/Application和隔离源；旧queued保留等待用户手动重新提交
+- 项目目标：按用户需求生成可运行应用，完成真实生成、运行交互、刷新恢复、迭代和发布闭环
+- 当前阶段：真实DeepSeek核心闭环已通过，部署恢复与上线收尾
+- 当前焦点：T-032沙箱重部署恢复与扩展验收；T-005/T-008保留生产完整验收
+- 阻塞事项：当前核心链路无已知阻塞；完整生产验收仍有缺口
+- 待验收范围：容器重部署恢复、第二类真实应用、沙箱异常/对抗路径、真实语音完整事件、无痕/手机流量与生产Secret治理
+- 下一步：同步真实验收记录，验证重部署后构建/发布/配置和应用数据恢复；不自动重放历史queued或模型请求
 - 最后更新：2026-11-24
 
 ## 当前摘要
+
+真实Google会话与用户已启用DeepSeek配置经独立Railway Worker完成规划和content-only流式代码；完整HTML校验后存PostgreSQL，opaque iframe运行。真实任务清单新增/完成/删除、刷新恢复、紫色主题迭代到构建2且原数据保留、同一Railway /apps链接发布更新与公开数据刷新已通过。最新应用源码c3e18b0、CI45410356880成功；固定133份文件中应用源码一致，仅账本本地收尾领先；122后端/27前端/build及Alembic check通过。
+
+平台和独立真实Worker已上线。APPLICATION_SANDBOX=true替代强制自有wildcard前提；path只是包装入口，运行隔离仍由无allow-same-origin的iframe和CSP提供。应用数据只保存在当前浏览器、按owner/project/private-public分区，不是云同步。平台保持用户授权development Mock演示并有真实Google/DeepSeek路径，不能标完整production验收通过。最新事实见docs/APPLICATION_SANDBOX_ACCEPTANCE.md与docs/RAILWAY_DEPLOYMENT_STATUS.md。
+
+## 历史阶段摘要（以下保留历史，不代表当前状态）
 
 V1.2服务端加密配置、独立PostgreSQL Worker、生成/迭代/取消恢复、隔离预览及本地公开发布更新已实现。本轮公开GitHub ruan-collabs/atoms-demo main已推送，首次94份源码下载校验一致，CI成功含Docker镜像build；代码交付见docs/GITHUB_DELIVERY.md。实际浏览器Mock闭环证据仅本地保留；本轮回归70后端/11前端通过。本轮Railway项目selfless-contentment已连接GitHub main，Postgres与postgres-volume已创建。按用户最新Mock阶段要求，平台UI启动/迁移/健康与development Mock变量已应用，Deploy成功，外网HTTPS及前端资源HTTP200，健康检查status=ok且迁移46670bfb6eb1。演示入口https://atoms-demo-production-57bed089.up.railway.app/dev-test。Worker/Application和稳定加密配置未接通，不声称生成预览发布闭环完成。详细进度见docs/RAILWAY_DEPLOYMENT_STATUS.md。真实身份与模型、生产密钥治理、完整公网链路、逐token流式仍未验收，不标生产AC全通过。
 
