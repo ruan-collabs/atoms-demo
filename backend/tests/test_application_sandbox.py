@@ -56,6 +56,19 @@ def test_storage_and_execution_contract_fail_closed(bad):
  with pytest.raises(ProviderError):sandbox_validate(bad)
 
 
+def test_promise_contract_and_revalidate_without_model(client,login,sandbox):
+ from app.models import GenerationRun,ModelConfiguration
+ from app.services.credentials import encrypt
+ login(client);pid=create(client)
+ html=HTML.replace('await atomsStorage.setItem(\'atoms-app:data:v1\',JSON.stringify(next));','return atomsStorage.setItem(\'atoms-app:data:v1\',JSON.stringify(next)).then(()=>{').replace("data.join(',');});\n</script>","data.join(',');});});\n</script>")
+ assert sandbox_validate(html)['sandbox_contract']=='atoms-storage-v1'
+ with SessionLocal() as db:
+  run=db.scalar(select(GenerationRun).where(GenerationRun.project_id==pid));run.provider='deepseek';run.status='failed';run.error='应用缺少await atomsStorage.setItem持久化契约';run.stream_text=html
+  config=db.get(ModelConfiguration,run.config_id);config.provider='deepseek';config.ciphertext=encrypt('fixture-only-key',config.owner_id,config.id,config.version);db.commit();rid=run.id
+ assert client.post(f'/api/projects/{pid}/runs/{rid}/revalidate').status_code==200
+ assert snapshot(client,pid)['run']['status']=='succeeded'
+
+
 def test_mock_cannot_use_real_sandbox_and_integrity_check(client,login,sandbox):
  login(client);pid=create(client);finish();bid=snapshot(client,pid)['build']['id']
  assert client.get(f'/api/application-sandbox/{pid}/frame?build_id={bid}&channel={uuid.uuid4()}').status_code==409

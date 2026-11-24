@@ -29,8 +29,8 @@ def sandbox_validate(html,key=''):
     result=validate_html(html,key)
     if re.search(r'\b(?:localStorage|sessionStorage|indexedDB)\b|document\s*\.\s*cookie',html):
         raise ProviderError('沙箱应用必须使用异步atomsStorage，不允许浏览器原生存储','artifact')
-    if 'atomsStorage' not in html or not re.search(r'await\s+(?:window\.)?atomsStorage\.setItem\s*\(',html):
-        raise ProviderError('应用缺少await atomsStorage.setItem持久化契约','artifact')
+    if 'atomsStorage' not in html or not re.search(r'(?:window\.)?atomsStorage\.setItem\s*\(',html) or not ('await ' in html or '.then(' in html):
+        raise ProviderError('应用缺少异步atomsStorage.setItem持久化契约','artifact')
     class Contract(HTMLParser):
         def handle_starttag(self,tag,attrs):
             if tag=='script' and dict(attrs).get('type','') not in ('','text/javascript','application/javascript'):

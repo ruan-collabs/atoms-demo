@@ -115,6 +115,29 @@ def retry_save(project_id:UUID,run_id:UUID,user:User=Depends(current_user),db:Se
     except JobStopped:raise HTTPException(409,'任务或凭证已失效') from None
     return {'saved':True}
 
+@router.post('/{project_id}/runs/{run_id}/revalidate')
+def revalidate(project_id:UUID,run_id:UUID,user:User=Depends(current_user),db:Session=Depends(get_db)):
+    project=owned(db,project_id,user);advisory_lock(db,'generation:'+project.id);advisory_lock(db,'model:'+user.id)
+    run=db.scalar(select(GenerationRun).where(GenerationRun.id==str(run_id),GenerationRun.project_id==project.id).with_for_update())
+    if run and run.status=='succeeded':return {'saved':True}
+    if not run or run.status!='failed' or not (run.error or '').startswith(('应用缺少await atomsStorage','应用缺少异步atomsStorage')):
+        raise HTTPException(409,'此失败结果不允许重新校验保存')
+    config=enabled_config(db,user,run.config_id,run.config_version)
+    if project.current_build_id!=run.base_build_id:raise HTTPException(409,'成功版本已变化，不能保存旧候选')
+    if db.scalar(select(GenerationRun).where(GenerationRun.project_id==project.id,GenerationRun.status.in_(ACTIVE))):raise HTTPException(409,'已有活动任务')
+    from app.services.artifacts import parse_output
+    from app.api.application_sandbox import sandbox_validate
+    from app.services.credentials import decrypt
+    key=decrypt(config.ciphertext,config.owner_id,config.id,config.version)
+    try:
+        html=parse_output(run.stream_text);validation=sandbox_validate(html,key)
+    finally:key=''
+    run.candidate={'html':html,'validation':validation,'mock':False};run.status='validating';run.error=None
+    add_event(run,'validating','用户重新校验已有完整产物，不调用模型');db.commit()
+    try:commit_candidate(run.id)
+    except JobStopped:raise HTTPException(409,'任务或凭证失效') from None
+    return {'saved':True}
+
 @router.get('/{project_id}/build')
 def get_build(project_id:UUID,user:User=Depends(current_user),db:Session=Depends(get_db)):
     project=owned(db,project_id,user)
