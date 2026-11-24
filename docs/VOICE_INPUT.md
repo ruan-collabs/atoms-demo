@@ -20,7 +20,7 @@ Pipecat WebSocket运输、PCM serializer、PipelineWorker保留；默认兼容�
 
 ## 链路与安全
 
-浏览器用户点击并确认告知→申请麦克风→AudioWorklet单声道PCM16/16k→同源认证WS→Pipecat→官方火山双向流式→全量替换临时文字/最终确认→填入Query，用户手动发送。不接TTS或自动LLM生成，不做实时播报。
+浏览器用户主动点击发送按钮旁的麦克风图标→直接申请麦克风（无业务二次确认，首次浏览器权限仍保留）→AudioWorklet单声道PCM16/16k→同源认证WS→Pipecat→官方火山双向流式→全量替换临时文字/最终确认→填入Query，用户手动发送。图标title及输入框下方状态持续告知供应商、费用和不保存原音频；录音时图标高亮，再点停止。不接TTS或自动LLM生成，不做实时播报。
 
 - 精确Origin、平台登录、每owner一连接、总并发限额、每包及总音频上限、最长120秒。
 - 200ms分包；供应商固定URL，DNS全部公共IP验证、TCP固定IP、原Host和TLS SNI、不读取环境代理、不跟重定向。
@@ -30,8 +30,10 @@ Pipecat WebSocket运输、PCM serializer、PipelineWorker保留；默认兼容�
 
 ## 本地验收
 
-99后端/19前端单测及TypeScript/Vite构建通过。火山供应商WebSocket用测试替身：真实Pipecat运输、serializer、worker接受PCM，收到临时全量文字、最终文字和done；停止/上游socket关闭、拒私网DNS/重定向、结果长度/解压限制、脱敏错误都有断言。此为协议契约/管线测试，不证明真实凭证或麦克风成功。
+99后端/21前端单测及TypeScript/Vite构建通过（T-027纯图标布局、点击直接申请麦克风且不调用confirm的组件测试已增加）。火山供应商WebSocket用测试替身：真实Pipecat运输、serializer、worker接受PCM，收到临时全量文字、最终文字和done；停止/上游socket关闭、拒私网DNS/重定向、结果长度/解压限制、脱敏错误都有断言。此为协议契约/管线测试，不证明真实凭证或麦克风成功。
 
 ## 部署与真实联调
 
-当前准备同步GitHub/Railway；变量名称已由界面核对存在，无读取密钥值。真实麦克风/火山服务授权/费用待短录音验收，不标已完成。关联T-026，T-021整体语音验收以真实结果为准。
+火山源码8b0c413已推GitHub，固定ZIP116份文件与当时本地一致，CI https://github.com/ruan-collabs/atoms-demo/actions/runs/45369863718 成功。Railway部署Active，用户填入的四项语音变量已应用，/api/voice/status.enabled=true、provider=pipecat-volcengine，页面按钮可用。用户接管进行短录音，交回后Query变为新的测试文本且麦克风/发送恢复；执行器未直接观察interim/final事件，不能只凭输入框文本判定全部真实流式与停止资源验收通过。T-026/T-021保持待验收。
+
+T-027用户进一步要求发送按钮旁纯麦克风图标，去除业务二次确认；本地修改与99后端/21前端/构建通过，准备部署回读。未自动录音，不移除浏览器权限，不自动发送Query。

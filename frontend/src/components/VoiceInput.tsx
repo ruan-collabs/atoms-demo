@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Mic, Square } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import { useApp } from '../AppContext';
 import { api, errorText } from '../lib/api';
 import { applyTranscript, transcriptText } from '../lib/voice-transcript';
 interface VoiceStatus {enabled:boolean;provider?:string;provider_name?:string;max_seconds:number;message:string}
-export function VoiceInput({value,onChange,disabled=false,onListeningChange}:{value:string;onChange:(value:string)=>void;disabled?:boolean;onListeningChange?:(value:boolean)=>void}){
+export function VoiceInput({value,onChange,disabled=false,onListeningChange,onStatusChange}:{value:string;onChange:(value:string)=>void;disabled?:boolean;onListeningChange?:(value:boolean)=>void;onStatusChange?:(value:string)=>void}){
  const {user}=useApp();const [status,setStatus]=useState<VoiceStatus|null>(null),[listening,setListening]=useState(false),[error,setError]=useState(''),[partial,setPartial]=useState('');
  const [starting,setStarting]=useState(false),[finishing,setFinishing]=useState(false);
  const resources=useRef<{socket?:WebSocket;stream?:MediaStream;context?:AudioContext;node?:AudioWorkletNode;timer?:number;stopping?:boolean}>({});
@@ -26,7 +26,6 @@ export function VoiceInput({value,onChange,disabled=false,onListeningChange}:{va
   setError('');cancelled.current=false;base.current=value;transcript.current={seq:0,committed:'',interim:''};
   try{
    if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia||!window.AudioWorkletNode)throw Error('当前浏览器不支持安全语音输入，请使用HTTPS和支持AudioWorklet的浏览器');
-   if(!window.confirm(`开始语音输入后，音频会通过平台发送至${status.provider_name??'语音服务'}转写，可能产生费用。不保存原始音频；转写仅填入输入框，不自动发送需求。是否开始？`))return;
    setStarting(true);listener.current?.(true);
    const stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true},video:false});
    if(cancelled.current){stream.getTracks().forEach(t=>t.stop());return;}
@@ -52,6 +51,8 @@ export function VoiceInput({value,onChange,disabled=false,onListeningChange}:{va
    await context.resume();
   }catch(e){setError(errorText(e));release();}
  };
- return <div className="voice-input"><button type="button" className="secondary" disabled={finishing||disabled||!user||!status?.enabled} onClick={()=>listening||starting?stop():void start()} aria-label={listening||starting?'停止语音输入':'开始语音输入'}>
-{listening||starting?<Square size={15}/>:<Mic size={15}/>} {finishing?'收尾中…':listening?'停止转写':starting?'取消连接':'语音输入'}</button><span className="tiny" role="status">{error||(!user?'登录后可用语音输入':finishing?'正在接收最后的转写结果…':listening?(partial?'实时转写中…':'正在聆听…'):status?.message||'读取语音配置…')}</span></div>;
+ const message=error||(!user?'登录后可用语音输入':finishing?'正在接收最后的转写结果…':starting?'正在连接麦克风…':listening?(partial?'实时转写中…再次点击麦克风停止':'正在聆听…再次点击麦克风停止'):status?.enabled?`点击麦克风即开始；音频发送至${status.provider_name??'语音服务'}转写，可能计费，不保存原音频、不自动发送需求。`:status?.message||'读取语音配置…');
+ useEffect(()=>{onStatusChange?.(message);},[message,onStatusChange]);
+ const label=finishing?'语音收尾中':listening?'停止语音输入':starting?'取消语音连接':'开始语音输入';
+ return <button type="button" className={`icon-button voice-button${listening?' is-listening':''}${starting||finishing?' is-processing':''}`} disabled={finishing||disabled||!user||!status?.enabled} onClick={()=>listening||starting?stop():void start()} aria-label={label} aria-pressed={listening||starting} title={message}><Mic size={18}/></button>;
 }
