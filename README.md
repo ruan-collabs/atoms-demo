@@ -42,7 +42,7 @@ Mock控制（仅开发）：[mock:fail]上游失败、[mock:invalid]非法HTML�
 - app.main：平台API与React静态资源，不执行生成的JS。
 - app.worker：独立后台进程，PostgreSQL FOR UPDATE SKIP LOCKED认领任务，提交成果前检查租约/版本/owner/取消。
 - app.application_server：仅运行保存成功的HTML，无平台身份API。每项目独立 p-project子域预览与a-project子域公开应用；二者不同安全源。
-- 阶段供应商请求是非流式完成接口，阶段与消息实时持久化后轮询；没有实现逐token流式展示，报告已列差距。
+- 规划为受限完整JSON响应；真实生成使用content-only SSE流式接收并持久化到Postgres，前端按run/revision/offset增量轮询恢复；Mock仅返回完整fixture，不伪装逐token流。代码只读，完整校验保存后才运行。
 - 本地应用数据仅各存储分区；浏览器iframe第三方存储分区可能使“嵌入预览”和“独立打开预览”也不共享记录。刷新同一表面可保留，发布不迁移预览数据。
 - 生成候选无外部资源，CSP断网络，禁止嵌入、顶层导航/弹窗、凭证读取；仅Node --check语法解析，不运行服务器命令。
 
@@ -55,3 +55,9 @@ UI证据由实际浏览器点击/输入/刷新获取，docs/evidence/*.txt不是
 Railway参见 docs/RAILWAY.md 和 docs/RAILWAY_DEPLOYMENT_STATUS.md。演示开启 DEV_MOCK_SANDBOX=true、DEV_INLINE_WORKER=true 时仅运行Mock fixture任务，正式切production必须关闭。真实模型拓扑需要独立Worker/Application安全源和稳定Secret。语音实时转文字通过Pipecat STT-only管线。火山新版控制台配置VOICE_PROVIDER=volcengine、VOICE_ENABLED=true、VOLC_ASR_API_KEY、VOLC_ASR_RESOURCE_ID（匹配开通服务），固定官方双向流式；无需App ID/Access Token。详细安全与验收见docs/VOICE_INPUT.md。兼容Deepgram时显式VOICE_PROVIDER=deepgram、DEEPGRAM_API_KEY，无自动切供应商。
 
 新增需求先入TODO；每次schema更新新增Alembic版本。不可自动删除生产数据或改写已应用迁移；备份/expand-contract迁移后再部署。Mock注册、生产待办和验收情况都在docs/SELF_TEST.md中。
+
+## 核心交互增量 T-030（本地开发，尚未更新Railway）
+
+预览/代码/活动三视图、结构化需求摘要、真实阶段反馈、桌面/手机预览宽度、模型与发布状态门禁已实现。无可用Worker时拒绝创建新任务并保留输入；Worker心跳每5秒刷新，20秒过期。Application与publication独立角色分别设置APPLICATION_ROLE。心跳只证明进程可用，不证明DNS/TLS或供应商成功。
+
+新增迁移a7c932e108df为旧run记录标dispatch_version=0，新真实Worker只消费新契约version1，不启动就执行旧需求。历史queued由用户显式重新提交或停止；重新提交保留旧任务历史。流式修复用revision重置，重复轮询不重复文本；未知上游不自动重发。真实API SSE有内容与跨chunk泄漏检查，测试上游替身不算实供应商验收。详情见docs/CORE_INTERACTION_DEVELOPMENT.md。

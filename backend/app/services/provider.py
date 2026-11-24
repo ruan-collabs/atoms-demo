@@ -1,5 +1,7 @@
 """Pinned public-IP HTTPS egress: no redirects, ambient proxies or arbitrary destinations."""
 import asyncio
+import json
+import re
 import ipaddress
 import socket
 from urllib.parse import urlsplit, urlunsplit
@@ -66,3 +68,89 @@ async def completion(config,key,messages,timeout=45,max_tokens=8192):
     except ProviderError:raise
     except httpx.TimeoutException:raise ProviderError('模型请求超时；不自动重复计费请求','timeout') from None
     except (httpx.HTTPError,ValueError,IndexError,KeyError):raise ProviderError('模型网络、TLS或响应结构异常','network') from None
+
+
+def check_status(code):
+    if code == 400: raise ProviderError('模型请求参数无效，请检查模型ID与接口格式', 'request')
+    if code in (401, 403, 404): raise ProviderError('模型Key、权限或模型无效，请重新配置', 'auth')
+    if code == 402: raise ProviderError('模型账户余额不足', 'balance')
+    if code == 429: raise ProviderError('模型请求受限，请稍后手动重试', 'rate_limit')
+    if 300 <= code < 400: raise ProviderError('拒绝供应商重定向', 'destination')
+    if code != 200: raise ProviderError(f'上游服务错误（HTTP {code}）', 'upstream')
+
+
+async def stream_completion(config, key, messages, on_delta, timeout=60, max_tokens=8192):
+    """Content-only SSE. Hold back enough text to catch credentials across chunks.
+
+    Raw frames and reasoning are never sent to callers. No transport retry.
+    """
+    url, hostname = await asyncio.to_thread(resolve_target, config.base_url)
+    payload = {'model': config.model, 'messages': messages, 'max_tokens': max_tokens, 'stream': True}
+    if config.provider == 'deepseek':
+        parts = urlsplit(config.base_url)
+        if parts.hostname != 'api.deepseek.com' or parts.path.rstrip('/') not in ('', '/v1'):
+            raise ProviderError('DeepSeek只支持官方标准API地址', 'destination')
+        payload['thinking'] = {'type': 'disabled'}
+    tail = ''
+    full = ''
+    finished = False
+    done = False
+    wire_bytes = 0
+    # Generic API-key patterns are checked with a long suffix buffer as well.
+    if len(key)>4096:raise ProviderError('模型凭证格式无效','auth')
+    hold = max(512, len(key) + 16)
+    leak_pattern = re.compile(r'(?:sk-|Bearer\s+)',re.I)
+
+    async def emit(text, flush=False):
+        nonlocal tail
+        tail += text
+        if (key and key in tail) or leak_pattern.search(tail):
+            raise ProviderError('产物疑似包含凭证，已阻止输出与保存', 'leak')
+        count = len(tail) if flush else max(0, len(tail) - hold)
+        if count:
+            safe, tail = tail[:count], tail[count:]
+            await on_delta(safe)
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(timeout, connect=10), follow_redirects=False, trust_env=False) as client:
+            async with client.stream('POST', url,
+                headers={'Host': hostname, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json'},
+                extensions={'sni_hostname': hostname}, json=payload) as response:
+                check_status(response.status_code)
+                async for line in response.aiter_lines():
+                    wire_bytes += len(line.encode())
+                    if wire_bytes > 4_000_000 or len(line) > 131072:
+                        raise ProviderError('上游流式响应超过限制', 'artifact')
+                    if not line.startswith('data:'):
+                        continue
+                    raw = line[5:].strip()
+                    if raw == '[DONE]':
+                        done = True
+                        break
+                    data = json.loads(raw)
+                    if not isinstance(data, dict) or data.get('error'):
+                        raise ProviderError('上游流式响应异常', 'network')
+                    choices = data.get('choices')
+                    if choices == []: continue  # usage-only final frame
+                    if not isinstance(choices, list) or len(choices) != 1:
+                        raise ProviderError('上游流式响应结构异常', 'network')
+                    choice = choices[0]
+                    delta = choice.get('delta', {})
+                    if not isinstance(delta, dict) or delta.get('refusal') or delta.get('tool_calls'):
+                        raise ProviderError('模型未返回有效应用内容', 'artifact')
+                    value = delta.get('content') or ''
+                    if not isinstance(value, str): raise ProviderError('上游内容格式异常', 'network')
+                    full += value
+                    if len(full.encode()) > 1_000_000: raise ProviderError('产物超过大小限制', 'artifact')
+                    await emit(value)
+                    reason = choice.get('finish_reason')
+                    if reason is not None:
+                        if reason != 'stop': raise ProviderError('模型输出被截断、拒绝或中断，未保存候选', 'artifact')
+                        finished = True
+        if not (finished and done and full.strip()):
+            raise ProviderError('模型流中断；不自动重复计费请求', 'network')
+        await emit('', flush=True)
+        return full
+    except ProviderError: raise
+    except httpx.TimeoutException: raise ProviderError('模型请求超时；不自动重复计费请求', 'timeout') from None
+    except (httpx.HTTPError, ValueError, TypeError, KeyError, AttributeError):
+        raise ProviderError('模型网络、TLS或流式响应结构异常', 'network') from None

@@ -12,6 +12,7 @@ from app.db import get_db
 from app.models import GenerationRun, BuildArtifact, Message, User, now, uid
 from app.security import advisory_lock, current_user
 from app.worker import add_event, commit_candidate, JobStopped
+from app.services.readiness import readiness, require_worker
 
 router=APIRouter(prefix='/projects',tags=['generation'])
 class Generate(StrictInput):
@@ -30,11 +31,29 @@ class Retry(StrictInput):
 
 def run_view(run):
     if not run:return None
-    return {'id':run.id,'status':run.status,'error':run.error,'events':run.events,'retry_of':run.retry_of,'created_at':run.created_at.astimezone(timezone.utc),'finished_at':run.finished_at.astimezone(timezone.utc) if run.finished_at else None,'mock':run.provider=='mock'}
+    return {'id':run.id,'status':run.status,'error':run.error,'events':run.events,'retry_of':run.retry_of,'created_at':run.created_at.astimezone(timezone.utc),'finished_at':run.finished_at.astimezone(timezone.utc) if run.finished_at else None,'mock':run.provider=='mock', 'requires_resubmit':run.status=='queued' and run.provider!='mock' and run.dispatch_version!=1,'stream_bytes':run.stream_bytes or 0}
+
+@router.get('/generation/service-status')
+def service_status(user:User=Depends(current_user),db:Session=Depends(get_db)):
+    config=enabled_config(db,user)
+    return readiness(db,config.provider)
+
+@router.get('/{project_id}/runs/{run_id}/stream')
+def stream_snapshot(project_id:UUID,run_id:UUID,offset:int=Query(0,ge=0),revision:int=Query(0,ge=0),user:User=Depends(current_user),db:Session=Depends(get_db)):
+    owned(db,project_id,user)
+    run=db.scalar(select(GenerationRun).where(GenerationRun.id==str(run_id),GenerationRun.project_id==str(project_id)))
+    if not run:raise HTTPException(404,'任务不可访问')
+    text=run.stream_text or ''
+    # A repair may reset output. Offset is a Unicode character offset, not bytes.
+    reset=offset>len(text) or revision!=run.stream_revision
+    if reset:offset=0
+    end=min(len(text),offset+32768)
+    return {'run_id':run.id,'offset':offset,'next_offset':end,'delta':text[offset:end], 'reset':reset,'revision':run.stream_revision,'stream_bytes':run.stream_bytes or 0,'status':run.status}
 
 def enqueue(db,project,config,message,key,retry_of=None):
     active=db.scalar(select(GenerationRun).where(GenerationRun.project_id==project.id,GenerationRun.status.in_(ACTIVE)))
     if active:raise HTTPException(409,'当前只允许一个生成任务')
+    require_worker(db,config.provider)
     run=GenerationRun(id=uid(),project_id=project.id,message_id=message.id,base_build_id=project.current_build_id,provider=config.provider,model=config.model,config_id=config.id,config_version=config.version,idempotency_key=key,retry_of=retry_of)
     add_event(run,'queued','任务已被服务器接受'+(' [开发Mock]' if config.provider=='mock' else ''))
     db.add(run);project.updated_at=now();return run
@@ -77,10 +96,14 @@ def stop(project_id:UUID,run_id:UUID,user:User=Depends(current_user),db:Session=
 def retry(project_id:UUID,run_id:UUID,body:Retry,user:User=Depends(current_user),db:Session=Depends(get_db)):
     project=owned(db,project_id,user);advisory_lock(db,'model:'+user.id);advisory_lock(db,'generation:'+project.id)
     prior=db.scalar(select(GenerationRun).where(GenerationRun.id==str(run_id),GenerationRun.project_id==project.id))
-    if not prior or prior.status not in ('failed','cancelled','interrupted'):raise HTTPException(409,'当前任务不允许模型重试')
+    legacy=bool(prior and prior.status=='queued' and prior.provider!='mock' and prior.dispatch_version!=1)
+    if not prior or (prior.status not in ('failed','cancelled','interrupted') and not legacy):raise HTTPException(409,'当前任务不允许模型重试')
     existing=db.scalar(select(GenerationRun).where(GenerationRun.project_id==project.id,GenerationRun.idempotency_key==str(body.idempotency_key)))
     if existing:return run_view(existing)
     config=enabled_config(db,user,body.config_id,body.config_version)
+    require_worker(db,config.provider)
+    if legacy:
+        prior.status='cancelled';prior.finished_at=now();add_event(prior,'cancelled','用户手动重新提交，旧任务不执行');db.flush()
     run=enqueue(db,project,config,db.get(Message,prior.message_id),str(body.idempotency_key),prior.id);db.commit();return run_view(run)
 
 @router.post('/{project_id}/runs/{run_id}/retry-save')

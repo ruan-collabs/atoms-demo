@@ -29,6 +29,9 @@ def preview(project_id:UUID,user:User=Depends(current_user),db:Session=Depends(g
     build=db.get(BuildArtifact,project.current_build_id)
     if build and build.artifact.get('mock') and settings.dev_mock_sandbox and not settings.production:
         return {'url':settings.public_origin+'/mock-preview/'+project.id}
+    from app.services.readiness import readiness
+    if not readiness(db,'mock' if build and build.artifact.get('mock') else 'deepseek')['preview_ready']:
+        raise HTTPException(503,'隔离预览服务未就绪，成功构建已保存')
     return {'url':preview_url(project.id,project.current_build_id)}
 
 @router.get('/{project_id}/publication')
@@ -56,6 +59,10 @@ def publish(project_id:UUID,body:Publish,user:User=Depends(current_user),db:Sess
         p.public_url=settings.public_origin+'/mock-apps/'+project.id
         p.status='published';p.error=None;p.updated_at=now();db.commit()
         return publication_view(p,project)
+    from app.services.readiness import readiness
+    state=readiness(db,'mock' if build.artifact.get('mock') else 'deepseek')
+    if not state['preview_ready'] or not state['publication_ready'] or not state['worker_ready']:
+        raise HTTPException(503,'发布服务未就绪，当前成功构建已保留')
     if not p:p=Publication(id=uid(),project_id=project.id);db.add(p)
     p.target_build_id=str(body.build_id);p.job_key=str(body.idempotency_key);p.status='updating' if p.published_build_id else 'publishing';p.error=None;p.updated_at=now();db.commit()
     return publication_view(p,project)

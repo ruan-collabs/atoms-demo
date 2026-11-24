@@ -52,7 +52,7 @@ def test_database():
 @pytest.fixture(autouse=True)
 def reset_test_data():
     with engine.begin() as conn:
-        conn.execute(text('TRUNCATE users, rate_limits, login_challenges, oauth_challenges CASCADE'))
+        conn.execute(text('TRUNCATE users, rate_limits, login_challenges, oauth_challenges, service_heartbeats CASCADE'))
 
 @pytest.fixture
 def mailbox(monkeypatch):
@@ -78,5 +78,7 @@ def login(mailbox):
         draft=client.post('/api/model-config/test',json={'provider':'mock','api_key':'','base_url':'mock://local','model':'fixture','idempotency_key':str(uuid.uuid4()),'consent':True})
         assert draft.status_code==200,draft.text
         assert client.post('/api/model-config/save',json={'draft_id':draft.json()['draft_id'],'consent':True}).status_code==200
+        from app.services.readiness import heartbeat
+        heartbeat(str(uuid.uuid4()),'worker')
         return response.json()['user']
     return login_user

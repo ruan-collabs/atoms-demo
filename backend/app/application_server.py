@@ -11,7 +11,28 @@ from app.db import SessionLocal
 from app.models import Project, BuildArtifact, Publication
 from app.security import digest
 
-app=FastAPI(docs_url=None,openapi_url=None,redoc_url=None)
+from contextlib import asynccontextmanager
+import asyncio
+from app.models import uid
+from app.services.readiness import heartbeat
+
+@asynccontextmanager
+async def lifespan(app):
+    service_id=uid()
+    import os
+    from urllib.parse import urlsplit
+    role='publication' if os.environ.get('APPLICATION_ROLE')=='publication' or str(urlsplit(settings.app_origin).port)==os.environ.get('PORT','8001') else 'application'
+    async def pulse():
+        while True:
+            try: await asyncio.to_thread(heartbeat,service_id,role)
+            except Exception: pass
+            await asyncio.sleep(5)
+    task=asyncio.create_task(pulse())
+    try:yield
+    finally:
+        task.cancel();await asyncio.gather(task,return_exceptions=True)
+
+app=FastAPI(lifespan=lifespan,docs_url=None,openapi_url=None,redoc_url=None)
 
 def preview_signature(project_id,build_id,expires):
     return digest(f'preview:{project_id}:{build_id}:{expires}')
@@ -20,9 +41,10 @@ def preview_url(project_id,build_id):
     expires=int(time.time())+3600
     return settings.app_url(project_id)+f'?build={build_id}&expires={expires}&signature={preview_signature(project_id,build_id,expires)}'
 
-def render_html(html):
+def render_html(html,build_id=''):
     # Only runtime health information crosses origins; no access to platform credentials.
-    bridge="""<script>(()=>{const send=(type)=>{try{parent.postMessage({type},'*')}catch{}};addEventListener('error',()=>send('atoms-preview-error'));addEventListener('unhandledrejection',()=>send('atoms-preview-error'));addEventListener('load',()=>send('atoms-preview-ready'));})();</script>"""
+    import json
+    bridge="<script>(()=>{const build_id="+json.dumps(build_id)+";const send=(type)=>{try{parent.postMessage({type,build_id},'*')}catch{}};addEventListener('error',()=>send('atoms-preview-error'));addEventListener('unhandledrejection',()=>send('atoms-preview-error'));addEventListener('load',()=>send('atoms-preview-ready'));})();</script>"
     source_html=html
     html=re.sub(r'</head\s*>',lambda m:bridge+m.group(0),html,count=1,flags=re.I)
     response=HTMLResponse(html)
@@ -57,4 +79,4 @@ def application(request:Request):
             publication=db.scalar(select(Publication).where(Publication.project_id==project_id))
             build=db.get(BuildArtifact,publication.published_build_id) if publication and publication.published_build_id else None
         if not build or (settings.production and build.artifact.get('mock')):return JSONResponse(status_code=404,content={'detail':'应用尚未发布或不可访问'})
-        return render_html(build.artifact['html'])
+        return render_html(build.artifact['html'],build.id)

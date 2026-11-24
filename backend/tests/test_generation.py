@@ -65,6 +65,8 @@ def test_mock_core_without_master_key(client,monkeypatch):
     draft=client.post('/api/model-config/test',json={'provider':'mock','api_key':'','base_url':'mock://local','model':'fixture','idempotency_key':str(uuid.uuid4()),'consent':True})
     assert draft.status_code==200,draft.text
     assert client.post('/api/model-config/save',json={'draft_id':draft.json()['draft_id'],'consent':True}).status_code==200
+    from app.services.readiness import heartbeat
+    heartbeat(str(uuid.uuid4()),'worker',True)
     pid=create(client);finish();assert snapshot(client,pid)['run']['status']=='succeeded'
     # A shared demonstration identity must never accept real credentials.
     real=client.post('/api/model-config/test',json={'provider':'deepseek','api_key':'fixture-not-real','base_url':'https://api.deepseek.com','model':'deepseek-flash','idempotency_key':str(uuid.uuid4()),'consent':True})
@@ -210,6 +212,9 @@ def test_save_retry_no_new_model_request(client,login):
 def test_publication_verified_update_and_failure_rollback(client,login,monkeypatch):
     import httpx
     from app.api.publication import process_publication
+    from app.services.readiness import heartbeat
+    heartbeat(str(uuid.uuid4()),'application')
+    heartbeat(str(uuid.uuid4()),'publication')
     login(client);pid=create(client);finish();old=snapshot(client,pid)['build']['id']
     key=str(uuid.uuid4());body={'build_id':old,'idempotency_key':key}
     assert client.post(f'/api/projects/{pid}/publish',json=body).status_code==202

@@ -8,7 +8,8 @@ from app.config import settings
 from app.db import SessionLocal
 from app.models import GenerationRun, ModelConfiguration, ModelDraft, Project, Message, BuildArtifact, now, uid
 from app.services.credentials import decrypt, CredentialError
-from app.services.provider import completion, ProviderError
+from app.services.provider import completion, stream_completion, ProviderError
+from app.services.readiness import heartbeat
 from app.services.mock_model import mock_completion
 from app.services.artifacts import parse_output, validate_html
 from app.security import advisory_lock
@@ -68,8 +69,33 @@ async def execute(run_id,token):
             config_snapshot=config
         candidate_for_repair=None
         plan=''
+        pending=''
+        last_flush=0.0
+        async def on_delta(delta, force=False):
+            nonlocal pending, last_flush
+            pending += delta
+            if not force and len(pending) < 4096 and time.monotonic() - last_flush < 0.4:
+                return
+            if not pending: return
+            with SessionLocal() as db:
+                run,_=valid_job(db,run_id,token)
+                run.stream_text += pending
+                run.stream_bytes = len(run.stream_text.encode())
+                if run.stream_bytes > 1_000_000: raise ProviderError('产物超过大小限制','artifact')
+                db.commit()
+            pending='';last_flush=time.monotonic()
         async def call(stage,repair=None):
-            if provider=='mock':return await guarded_call(run_id,token,mock_completion(prompt,base_html,planning=stage=='planning'))
+            nonlocal pending
+            if stage != 'planning':
+                pending=''
+                with SessionLocal() as db:
+                    r,_=valid_job(db,run_id,token);r.stream_text='';r.stream_bytes=0;r.stream_revision+=1;db.commit()
+            if provider=='mock':
+                value=await guarded_call(run_id,token,mock_completion(prompt,base_html,planning=stage=='planning'))
+                if stage != 'planning':
+                    # A completed fixture is not disguised as token streaming.
+                    await on_delta(value,force=True)
+                return value
             system='You build self-contained single-page HTML/CSS/JS applications. No external resources, no remote fetch, no server code, payments or sensitive services. Use inline CSS/JS. Never include credentials. Use stable localStorage key atoms-app:data:v1, validate storage and show failures. Preserve existing storage schema on style iterations. Output complete <!doctype html> document, not Markdown.'
             if stage=='planning':
                 if any(term in prompt for term in ('真实支付','真实医疗','多人共享数据库','真实银行')):raise ProviderError('P0仅支持本地单页应用，不支持此真实敏感服务需求','scope')
@@ -77,10 +103,14 @@ async def execute(run_id,token):
             else:
                 msgs=[{'role':'system','content':system}]
                 if base_html:msgs.append({'role':'user','content':'Existing application (preserve behavior and storage):\n'+base_html})
-                if plan:msgs.append({'role':'user','content':'Approved scope plan:\n'+plan})
+                if plan:msgs.append({'role':'user','content':'Scope plan (not user approval):\n'+plan})
                 if repair and candidate_for_repair:msgs.append({'role':'user','content':'Candidate to repair:\n'+candidate_for_repair})
                 msgs.append({'role':'user','content':prompt+(('\nFix validation issue: '+repair) if repair else '')})
-            return await guarded_call(run_id,token,completion(config_snapshot,key,msgs))
+            if stage == 'planning':
+                return await guarded_call(run_id,token,completion(config_snapshot,key,msgs,max_tokens=1024))
+            value=await guarded_call(run_id,token,stream_completion(config_snapshot,key,msgs,on_delta))
+            await on_delta('',force=True)
+            return value
         async with asyncio.timeout(settings.run_budget_seconds):
             transition(run_id,token,'planning','开始范围与交互规划'+('（开发Mock）' if provider=='mock' else ''))
             plan=await call('planning')
@@ -146,7 +176,12 @@ def maintenance_and_claim(mock_only=False):
             draft.ciphertext=None;draft.status='expired'
         for stale in db.scalars(select(GenerationRun).where(GenerationRun.status.in_(ACTIVE),GenerationRun.lease_expires_at<now()).with_for_update(skip_locked=True)):
             stale.status='interrupted';stale.error='Worker租约过期，未知上游结果不会自动重放';stale.finished_at=now();add_event(stale,'interrupted',stale.error)
+        for waiting in db.scalars(select(GenerationRun).where(GenerationRun.status=='queued',GenerationRun.provider!='mock',GenerationRun.dispatch_version==1,GenerationRun.created_at<now()-timedelta(seconds=60)).with_for_update(skip_locked=True)):
+            waiting.status='interrupted';waiting.finished_at=now();waiting.error='任务未被及时认领，请手动重新提交；未自动调用模型';add_event(waiting,'interrupted',waiting.error)
         query=select(GenerationRun).where(GenerationRun.status=='queued')
+        # Version-zero real jobs predate readiness gates. Never consume old backlog implicitly.
+        from sqlalchemy import or_
+        query=query.where(or_(GenerationRun.provider=='mock',GenerationRun.dispatch_version==1))
         if mock_only:query=query.where(GenerationRun.provider=='mock')
         run=db.scalar(query.order_by(GenerationRun.created_at).with_for_update(skip_locked=True).limit(1))
         if not run:db.commit();return None
@@ -154,14 +189,24 @@ def maintenance_and_claim(mock_only=False):
 
 async def main(mock_only=False):
     print('Atoms Worker ready; durable Postgres queue; no request/key logging',flush=True)
-    while True:
-        try:
-            from app.api.publication import process_publication
-            if not mock_only:await process_publication()
-            job=maintenance_and_claim(mock_only=mock_only)
-            if job:await execute(*job)
-            else:await asyncio.sleep(settings.worker_poll_seconds)
-        except asyncio.CancelledError:raise
-        except Exception:await asyncio.sleep(2)
+    service_id=uid()
+    async def pulse():
+        while True:
+            try: await asyncio.to_thread(heartbeat,service_id,'worker',mock_only)
+            except Exception: pass
+            await asyncio.sleep(5)
+    pulse_task=asyncio.create_task(pulse())
+    try:
+        while True:
+            try:
+                from app.api.publication import process_publication
+                if not mock_only:await process_publication()
+                job=maintenance_and_claim(mock_only=mock_only)
+                if job:await execute(*job)
+                else:await asyncio.sleep(settings.worker_poll_seconds)
+            except asyncio.CancelledError:raise
+            except Exception:await asyncio.sleep(2)
+    finally:
+        pulse_task.cancel();await asyncio.gather(pulse_task,return_exceptions=True)
 
 if __name__=='__main__':asyncio.run(main())

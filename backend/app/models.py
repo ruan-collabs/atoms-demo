@@ -135,8 +135,19 @@ class GenerationRun(Base):
     error: Mapped[str | None] = mapped_column(Text)
     candidate: Mapped[dict | None] = mapped_column(JSON)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    dispatch_version: Mapped[int] = mapped_column(Integer, default=1, server_default='0')
+    stream_text: Mapped[str] = mapped_column(Text, default='', server_default='')
+    stream_bytes: Mapped[int] = mapped_column(Integer, default=0, server_default='0')
+    stream_revision: Mapped[int] = mapped_column(Integer, default=0, server_default='0')
     __table_args__ = (UniqueConstraint('project_id', 'idempotency_key', name='uq_run_idempotency'),)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+class ServiceHeartbeat(Base):
+    __tablename__ = 'service_heartbeats'
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    role: Mapped[str] = mapped_column(String(20), index=True)
+    mock_only: Mapped[bool] = mapped_column(default=False)
+    seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 class BuildArtifact(Base):
     __tablename__ = 'build_artifacts'

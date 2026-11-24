@@ -24,6 +24,10 @@
 | M08 | 邮件传输 | MAIL_MODE=file及测试内模拟 | OTP真实生成/校验，未发送真实邮件 | smtp真实接入或明确disabled；production禁止file |
 | M09 | Railway/CI/镜像实测 | 本地配置文件，无账号绑定 | 源码/编译/变量校验；没有云部署 | 自己账号部署真实数据库/平台/Worker/Application，Docker/CI运行与健康检查；本轮不制造假线上地址 |
 
+## T-030本地流式与界面验证
+
+新增stream测试只模拟供应商HTTP/SSE，真实解析/持久化/增量恢复/Worker与数据库逻辑实际执行；不当真实DeepSeek已调用。Mock生成仍一次返回完整fixture，不逐字定时伪装流式。新版编辑器本地任务新增/刷新/紫色迭代保持真实交互，身份/模型明确Mock。真实Worker/Application云部署与真实流式未验，详见CORE_INTERACTION_DEVELOPMENT.md。以下旧“无逐token”差距为历史，现实现content-only SSE但上游仍待联调。
+
 ## Fail-closed边界
 
 - 生产APP_ENV=production禁止DEV_MOCK_AUTH/DEV_MOCK_MODEL=true。

@@ -2,6 +2,10 @@
 
 **结论：本地 Mock 辅助业务闭环通过；未达到真实生产 P0 全项验收。**
 
+## T-030核心交互增量（本地开发，2026-11-24）
+
+用户设计已确认；预览/代码/活动三视图、真实SSE内容适配、持久增量恢复、独立服务心跳与新任务门禁、历史queued防自动消费已实现。完整109后端/25前端及构建、Alembic check通过。本地浏览器无Worker拒绝且草稿保留；开启Worker后Mock构建1、预览新增任务刷新恢复、紫色迭代构建2且任务保留。详细见CORE_INTERACTION_DEVELOPMENT.md。未调用真实DeepSeek，未更新GitHub/Railway，线上真实角色仍未部署。下文旧“无逐token”等是历史状态；当前协议实现通过替身测试，真实流式仍待联调。
+
 ## 最新增量验收（2026-11-24）
 
 本地最新91后端/18前端及构建通过，远端CI 45339583822成功含Docker build；Railway e2246a9及Mock沙箱/Mock-only后台选项已上线。公网浏览器完成匿名工作台、Query提交后登录恢复、Mock检查保存、任务生成、任务新增编辑完成、刷新、主题迭代、发布与匿名分享刷新。详细证据与限制见INCREMENTAL_ACCEPTANCE.md、RAILWAY_DEPLOYMENT_STATUS.md。
