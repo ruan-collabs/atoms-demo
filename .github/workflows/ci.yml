@@ -1,0 +1,36 @@
+name: test-and-build
+on:
+  push:
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: atoms
+          POSTGRES_PASSWORD: atoms
+          POSTGRES_DB: postgres
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U atoms -d postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ATOMS_TEST_ADMIN_URL: postgresql://atoms:atoms@127.0.0.1:55432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install uv
+      - run: uv sync --project backend --frozen --extra test
+      - run: backend/.venv/bin/python -m pytest backend/tests -q
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend test
+      - run: npm --prefix frontend run build
+      - run: docker build -t atoms-framework:test .

@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: atoms
+      POSTGRES_PASSWORD: atoms
+      POSTGRES_DB: atoms
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["atoms_pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atoms -d atoms"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+  app:
+    build: .
+    environment: &app-env
+      APP_ENV: development
+      DATABASE_URL: postgresql://atoms:atoms@postgres:5432/atoms
+      PUBLIC_ORIGIN: http://localhost:8000
+      MAIL_MODE: disabled
+      APP_SECRET: development-only-change-before-deploy
+      CREDENTIAL_MASTER_KEY: ${CREDENTIAL_MASTER_KEY:?Set a separate 32-byte base64 key in your environment}
+      PREVIEW_ORIGIN: http://localhost:8001
+      APP_ORIGIN: http://localhost:8002
+      DEV_MOCK_AUTH: ${DEV_MOCK_AUTH:-false}
+      DEV_MOCK_MODEL: ${DEV_MOCK_MODEL:-false}
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["sh", "-c", "alembic upgrade head && exec python run.py"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 5s
+      retries: 20
+  worker:
+    build: .
+    environment: *app-env
+    command: ["python", "-m", "app.worker"]
+    depends_on:
+      app:
+        condition: service_healthy
+  preview:
+    build: .
+    environment:
+      <<: *app-env
+      PORT: 8001
+    ports: ["127.0.0.1:8001:8001"]
+    command: ["python", "run_application.py"]
+    depends_on:
+      app:
+        condition: service_healthy
+  public-app:
+    build: .
+    environment:
+      <<: *app-env
+      PORT: 8002
+    ports: ["127.0.0.1:8002:8002"]
+    command: ["python", "run_application.py"]
+    depends_on:
+      app:
+        condition: service_healthy
+volumes:
+  atoms_pgdata:

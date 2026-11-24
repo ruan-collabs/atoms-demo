@@ -15,3 +15,13 @@ requirements-source.json
 requirements-latest.json
 *.tsbuildinfo
 artifacts/
+# Local data, credentials and browser/test evidence must never be published.
+venv/
+*.db
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+config.json
+docs/evidence/
+docs/*test-results.xml
