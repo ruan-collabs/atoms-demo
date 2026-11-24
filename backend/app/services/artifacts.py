@@ -31,6 +31,12 @@ def parse_output(text):
     if value.startswith('{'):
         try:value=json.loads(value)['html']
         except (ValueError,KeyError,TypeError):raise ProviderError('模型产物结构无效','artifact') from None
+    # Accept exactly one complete HTML document inside explanatory/fenced output.
+    match=re.search(r'<!doctype\s+html\b[\s\S]*?</html\s*>',value,re.I)
+    if match:
+        remainder=value[:match.start()]+value[match.end():]
+        if re.search(r'<!doctype\s+html',remainder,re.I):raise ProviderError('模型返回多个HTML入口','artifact')
+        value=match.group(0)
     return value
 
 def validate_html(html,key=''):

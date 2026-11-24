@@ -99,7 +99,7 @@ async def stream_completion(config, key, messages, on_delta, timeout=60, max_tok
     # Generic API-key patterns are checked with a long suffix buffer as well.
     if len(key)>4096:raise ProviderError('模型凭证格式无效','auth')
     hold = max(512, len(key) + 16)
-    leak_pattern = re.compile(r'(?:sk-|Bearer\s+)',re.I)
+    leak_pattern = re.compile(r'(?<![A-Za-z0-9_-])(?:sk-|Bearer\s+)',re.I)
 
     async def emit(text, flush=False):
         nonlocal tail

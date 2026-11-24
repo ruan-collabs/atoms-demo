@@ -62,3 +62,22 @@ def test_key_across_chunks_not_emitted(monkeypatch):
             asyncio.run(stream_completion(config,'fixture-only-key',[],emit))
     assert error.value.category=='leak'
     assert 'fixture-only' not in ''.join(emitted)
+
+
+def test_task_css_identifier_not_key(monkeypatch):
+    text='<!doctype html><html><body class="task-item"><style>.task-done {color:red}</style></body></html>'
+    mock_stream(monkeypatch,frames([text]),{})
+    assert run_stream()[0]==text
+
+
+def test_standalone_key_prefix_still_blocked(monkeypatch):
+    mock_stream(monkeypatch,frames(['<p>sk-','unexpectedsecret</p>']),{})
+    with pytest.raises(ProviderError) as error:run_stream()
+    assert error.value.category=='leak'
+
+
+def test_extract_single_html_from_explanation():
+    from app.services.artifacts import parse_output
+    html='<!doctype html><html><head></head><body></body></html>'
+    assert parse_output('Explanation\n```html\n'+html+'\n```')==html
+    with pytest.raises(ProviderError):parse_output(html+html)
