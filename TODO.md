@@ -431,14 +431,14 @@
 
 ## T-036 | 恢复登录页的显式Mock演示入口
 
-- 状态：待验收
+- 状态：已完成
 - 阶段：交互上线
 - 优先级：P1
 - 验收条件：mock_auth启用时登录页提供Mock演示链接并标识非真实身份；禁用时不显示，Google和邮箱/模型收敛不变；组件回归、构建和上线状态核验
 - 依赖：无
 - 替代关系：无
-- 执行证据：frontend/src/test/pages.test.ts; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://github.com/ruan-collabs/atoms-demo/commit/41f4393cae6002555af9e1759271f974a173275c
-- 变更说明：2026-11-25：37前端测试/build及开关true/false渲染验证通过；41f4393已推，Railway Platform Active成功。当前账号保持登录不切换，CI45533046750终态仍待核验，不标完整完成
+- 执行证据：frontend/src/test/pages.test.ts; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://github.com/ruan-collabs/atoms-demo/actions/runs/45533046750
+- 变更说明：2026-11-25：37前端测试/build及开关渲染通过，41f4393已部署且CI45533046750后续成功；Mock入口恢复，不切换当前账号
 - 最后更新：2026-11-25
 
 ## T-037 | 精简登录页红框区域并默认启用Google登录按钮
@@ -449,8 +449,20 @@
 - 验收条件：移除登录说明卡片和勾选区，Google已配置时按钮默认可点；点击触发授权、处理中防重复，保留简短点击告知及条款查看入口、Mock演示、错误状态；前端测试构建、同步部署与页面回读
 - 依赖：无
 - 替代关系：无
-- 执行证据：frontend/src/pages/login.test.ts; frontend/src/test/pages.test.ts; frontend/src/pages/Login.tsx
-- 变更说明：2026-11-25：红框说明卡片和checkbox已移除，默认Google启用且仅点击后确认条款，失败恢复与重复点击保护、Mock入口保持；39前端测试/build通过，准备上线
+- 执行证据：frontend/src/pages/login.test.ts; frontend/src/test/pages.test.ts; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://github.com/ruan-collabs/atoms-demo/commit/a7ca1bc10f38aea940e7bada8187c18f1529b40a
+- 变更说明：2026-11-25：a7ca1bc已部署，39前端测试/build通过；红框卡片与checkbox移除、按钮默认启用/点击确认/双击防重复与失败恢复测试通过。保留Mock，CI45535360400仍待终态，当前会话不退出，匿名DOM未验
+- 最后更新：2026-11-25
+
+## T-038 | 移除模型弹窗技术说明和工作台计费常驻说明
+
+- 状态：待验收
+- 阶段：交互上线
+- 优先级：P1
+- 验收条件：移除截图两处指定常驻说明及占位；保留模型同意勾选测试保存和错误反馈、访客与Mock必要提示，重试和安全逻辑不变；前端测试构建与部署回读
+- 依赖：无
+- 替代关系：无
+- 执行证据：frontend/src/pages/Dashboard.tsx; frontend/src/components/ModelModal.tsx; frontend/src/test/pages.test.ts
+- 变更说明：2026-11-25：模型弹窗技术说明块删除，真实已配置工作台长说明不再渲染或占位；访客/Mock提示与同意测试保存保留。40前端测试/build通过，准备同步部署
 - 最后更新：2026-11-25
 
 <!-- 待办由守门器追加到此处 -->
