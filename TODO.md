@@ -455,14 +455,38 @@
 
 ## T-038 | 移除模型弹窗技术说明和工作台计费常驻说明
 
-- 状态：待验收
+- 状态：已完成
 - 阶段：交互上线
 - 优先级：P1
 - 验收条件：移除截图两处指定常驻说明及占位；保留模型同意勾选测试保存和错误反馈、访客与Mock必要提示，重试和安全逻辑不变；前端测试构建与部署回读
 - 依赖：无
 - 替代关系：无
-- 执行证据：frontend/src/pages/Dashboard.tsx; frontend/src/components/ModelModal.tsx; frontend/src/test/pages.test.ts
-- 变更说明：2026-11-25：模型弹窗技术说明块删除，真实已配置工作台长说明不再渲染或占位；访客/Mock提示与同意测试保存保留。40前端测试/build通过，准备同步部署
+- 执行证据：frontend/src/test/pages.test.ts; docs/SELF_TEST.md; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://github.com/ruan-collabs/atoms-demo/actions/runs/45537180074
+- 变更说明：2026-11-25：两处说明移除且无占位，40前端测试/build通过，1e8f202固定ZIP一致、Railway Active、线上两处节点0与同意测试保存门禁保留回读通过，CI45537180074成功；未改后端或调用模型
+- 最后更新：2026-11-25
+
+## T-039 | 对齐生成中设计的左右对话与停止按钮位置
+
+- 状态：待验收
+- 阶段：交互上线
+- 优先级：P1
+- 验收条件：用户消息靠右Agent消息靠左且保留可读宽度；生成中发送位替换为停止图标紧邻麦克风，停止中禁用与确认流程保留；不改生成后台或真实执行数据，前端测试构建及部署回读
+- 依赖：无
+- 替代关系：无
+- 执行证据：frontend/src/pages/editor.test.ts; docs/SELF_TEST.md; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://github.com/ruan-collabs/atoms-demo/actions/runs/45541730394
+- 变更说明：2026-11-25：42前端测试/build通过，4672549三份源码固定ZIP一致，公网新JS/CSS与健康200、CI45541730394成功；用户右Agent左及停止发送位已实现。本机浏览器绑定超时，登录态编辑器几何视觉和实际任务取消未验，不额外触发收费任务
+- 最后更新：2026-11-25
+
+## T-040 | 代码Tab流式生成自动跟随并尊重手动滚动
+
+- 状态：待验收
+- 阶段：交互上线
+- 优先级：P1
+- 验收条件：仅代码Tab可见且generating时自动滚动最新代码；手动滚轮触摸键盘或拖滚动条后本次run暂停跟随，程序滚动不误判，新run恢复默认；切Tab或完成不强拉，不改后端；组件测试构建及同步上线分别验收
+- 依赖：无
+- 替代关系：无
+- 执行证据：frontend/src/components/code-view.test.ts; docs/SELF_TEST.md
+- 变更说明：2026-11-25：49前端测试/build通过，只可见generating时跟随，手动滚动暂停且新run重置；准备同步部署，无后端或模型调用
 - 最后更新：2026-11-25
 
 <!-- 待办由守门器追加到此处 -->
