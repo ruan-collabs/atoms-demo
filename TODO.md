@@ -419,14 +419,26 @@
 
 ## T-035 | 收敛Google登录页与DeepSeek模型入口并上线
 
-- 状态：待验收
+- 状态：已完成
 - 阶段：交互上线
 - 优先级：P1
 - 验收条件：登录页只提供Google业务登录，移除邮箱表单与其他业务入口；模型默认DeepSeek，其他供应商禁用且hover/键盘焦点提示模型未上线；不破坏既有会话/配置/Mock测试专用入口；组件测试构建与Railway界面回读
 - 依赖：无
 - 替代关系：无
-- 执行证据：frontend/src/components/model-availability.test.ts; backend/tests/test_model_availability.py; frontend/src/pages/Login.tsx
-- 变更说明：2026-11-25：Google-only登录页、默认DeepSeek与OpenAI/custom禁用hover/焦点提示、真实账号隐藏Mock选择及后端新配置拒绝已实现；36前端139后端/build与迁移检查通过，准备GitHub/Railway同步，保留既有会话配置
+- 执行证据：frontend/src/components/model-availability.test.ts; frontend/src/test/pages.test.ts; backend/tests/test_model_availability.py; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://github.com/ruan-collabs/atoms-demo/actions/runs/45437418260
+- 变更说明：2026-11-25：Google-only登录页和DeepSeek默认已部署b14a101，OpenAI/custom禁用hover/焦点模型未上线提示公网回读通过；139后端36前端/build/迁移与CI成功。后台未上线配置拒绝，保留会话旧配置与Mock专用测试；登录页组件验证未重复授权，不发模型请求
+- 最后更新：2026-11-25
+
+## T-036 | 恢复登录页的显式Mock演示入口
+
+- 状态：待验收
+- 阶段：交互上线
+- 优先级：P1
+- 验收条件：mock_auth启用时登录页提供Mock演示链接并标识非真实身份；禁用时不显示，Google和邮箱/模型收敛不变；组件回归、构建和上线状态核验
+- 依赖：无
+- 替代关系：无
+- 执行证据：frontend/src/pages/Login.tsx; frontend/src/test/pages.test.ts
+- 变更说明：2026-11-25：mock_auth启用时恢复显式演示链接、禁用隐藏，Google正式登录与模型限制不变；37前端测试/build通过，准备同步上线
 - 最后更新：2026-11-25
 
 <!-- 待办由守门器追加到此处 -->
