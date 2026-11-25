@@ -8,7 +8,9 @@ async def mock_completion(prompt,base_html=None,planning=False):
     if settings.production or not settings.dev_mock_model:raise ProviderError('Mock模型不可用','mock')
     await asyncio.sleep(20 if '[mock:slow]' in prompt else settings.mock_delay_seconds)
     if '[mock:fail]' in prompt:raise ProviderError('开发Mock注入：供应商失败','upstream')
-    if planning:return json.dumps({'scope':'开发Mock验证','components':['输入','列表','状态筛选'],'storage':'当前项目独立Origin localStorage','acceptance':['添加','修改','持久化'],'mock':True},ensure_ascii=False)
+    if planning:
+        suggestions=[{'label':'完善作品详情','prompt':'完善作品详情展示，保留现有内容与数据。'},{'label':'调整作品布局','prompt':'调整作品展示布局，保留现有功能与数据。'}] if ('作品' in prompt or 'portfolio' in prompt.lower() or base_html and '精选作品' in base_html) else [{'label':'突出任务优先级','prompt':'突出任务优先级展示，保留现有任务与数据。'},{'label':'优化空状态','prompt':'优化任务列表空状态提示，保留现有功能与数据。'}]
+        return json.dumps({'scope':'开发Mock验证','components':['输入','列表','状态筛选'],'storage':'当前项目独立Origin localStorage','acceptance':['添加','修改','持久化'],'suggestions':suggestions,'mock':True},ensure_ascii=False)
     if '[mock:invalid]' in prompt:return '<html>invalid'
     if base_html:
         html=base_html

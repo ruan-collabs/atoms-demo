@@ -479,14 +479,26 @@
 
 ## T-040 | 代码Tab流式生成自动跟随并尊重手动滚动
 
-- 状态：待验收
+- 状态：已完成
 - 阶段：交互上线
 - 优先级：P1
 - 验收条件：仅代码Tab可见且generating时自动滚动最新代码；手动滚轮触摸键盘或拖滚动条后本次run暂停跟随，程序滚动不误判，新run恢复默认；切Tab或完成不强拉，不改后端；组件测试构建及同步上线分别验收
 - 依赖：无
 - 替代关系：无
-- 执行证据：frontend/src/components/code-view.test.ts; docs/SELF_TEST.md
-- 变更说明：2026-11-25：49前端测试/build通过，只可见generating时跟随，手动滚动暂停且新run重置；准备同步部署，无后端或模型调用
+- 执行证据：frontend/src/components/code-view.test.ts; docs/SELF_TEST.md; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://github.com/ruan-collabs/atoms-demo/actions/runs/45545279293
+- 变更说明：2026-11-25：49前端测试/build通过，eaa8e4d固定ZIP一致、CI45545279293成功、Railway Active。浏览器本地实际组件模拟追加到底、手动滚动后不拉回、新run重置通过；线上完成态代码Tab不跳底回读，无真实模型请求
+- 最后更新：2026-11-25
+
+## T-041 | 按应用上下文生成两条下一步推荐并随构建保存
+
+- 状态：待验收
+- 阶段：交互上线
+- 优先级：P1
+- 验收条件：真实推荐来自用户配置模型并结合现有应用及最近需求，与构建绑定持久化；每次新构建生成两条且不重复当前已做需求，刷新不再计费；点击只填草稿；旧版本无推荐不伪造，Mock明确区分；自动化测试及部署回读
+- 依赖：无
+- 替代关系：无
+- 执行证据：backend/tests/test_suggestions.py; frontend/src/pages/editor.test.ts; docs/SELF_TEST.md
+- 变更说明：2026-11-25：151后端51前端/build/迁移检查通过；真实推荐同次规划生成并随成功构建保存，输入只填草稿；准备上线，不额外调用模型或补造旧版本建议
 - 最后更新：2026-11-25
 
 <!-- 待办由守门器追加到此处 -->

@@ -13,6 +13,7 @@ from app.models import GenerationRun, BuildArtifact, Message, User, now, uid
 from app.security import advisory_lock, current_user
 from app.worker import add_event, commit_candidate, JobStopped
 from app.services.readiness import readiness, require_worker
+from app.services.suggestions import clean_suggestions
 
 router=APIRouter(prefix='/projects',tags=['generation'])
 class Generate(StrictInput):
@@ -81,7 +82,7 @@ def snapshot(project_id:UUID,user:User=Depends(current_user),db:Session=Depends(
     run=db.scalar(select(GenerationRun).where(GenerationRun.project_id==project.id).order_by(GenerationRun.created_at.desc(),GenerationRun.id).limit(1))
     build=db.get(BuildArtifact,project.current_build_id) if project.current_build_id else None
     messages=db.scalars(select(Message).where(Message.project_id==project.id).order_by(Message.created_at,Message.id)).all()
-    return {'run':run_view(run),'messages':[message_view(m) for m in messages], 'build':{'id':build.id,'number':build.number,'validation':build.validation,'mock':build.artifact.get('mock',False)} if build else None}
+    return {'run':run_view(run),'messages':[message_view(m) for m in messages], 'build':{'id':build.id,'number':build.number,'validation':build.validation,'mock':build.artifact.get('mock',False),'suggestions':clean_suggestions(build.artifact.get('suggestions',[]))} if build else None}
 
 @router.post('/{project_id}/runs/{run_id}/stop')
 def stop(project_id:UUID,run_id:UUID,user:User=Depends(current_user),db:Session=Depends(get_db)):
