@@ -437,8 +437,20 @@
 - 验收条件：mock_auth启用时登录页提供Mock演示链接并标识非真实身份；禁用时不显示，Google和邮箱/模型收敛不变；组件回归、构建和上线状态核验
 - 依赖：无
 - 替代关系：无
-- 执行证据：frontend/src/pages/Login.tsx; frontend/src/test/pages.test.ts
-- 变更说明：2026-11-25：mock_auth启用时恢复显式演示链接、禁用隐藏，Google正式登录与模型限制不变；37前端测试/build通过，准备同步上线
+- 执行证据：frontend/src/test/pages.test.ts; docs/RAILWAY_DEPLOYMENT_STATUS.md; https://github.com/ruan-collabs/atoms-demo/commit/41f4393cae6002555af9e1759271f974a173275c
+- 变更说明：2026-11-25：37前端测试/build及开关true/false渲染验证通过；41f4393已推，Railway Platform Active成功。当前账号保持登录不切换，CI45533046750终态仍待核验，不标完整完成
+- 最后更新：2026-11-25
+
+## T-037 | 精简登录页红框区域并默认启用Google登录按钮
+
+- 状态：待验收
+- 阶段：交互上线
+- 优先级：P1
+- 验收条件：移除登录说明卡片和勾选区，Google已配置时按钮默认可点；点击触发授权、处理中防重复，保留简短点击告知及条款查看入口、Mock演示、错误状态；前端测试构建、同步部署与页面回读
+- 依赖：无
+- 替代关系：无
+- 执行证据：frontend/src/pages/login.test.ts; frontend/src/test/pages.test.ts; frontend/src/pages/Login.tsx
+- 变更说明：2026-11-25：红框说明卡片和checkbox已移除，默认Google启用且仅点击后确认条款，失败恢复与重复点击保护、Mock入口保持；39前端测试/build通过，准备上线
 - 最后更新：2026-11-25
 
 <!-- 待办由守门器追加到此处 -->
