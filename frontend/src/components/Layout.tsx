@@ -7,7 +7,7 @@ import { ErrorNotice } from './Modal';
 import { errorText } from '../lib/api';
 
 export function ProtectedLayout() {
-  const {user,model,modelOpen,setModelOpen,logout,meta}=useApp();
+  const {user,model,modelOpen,setModelOpen,logout}=useApp();
   const location=useLocation();
   const isPublic=location.pathname==='/dashboard'||location.pathname==='/projects';
   const [menu,setMenu]=useState(false),[error,setError]=useState('');
@@ -20,7 +20,7 @@ export function ProtectedLayout() {
       <div className="nav-label">{user?'个人工作区':'访客体验'}</div>
       <nav><NavLink to="/dashboard"><House size={18}/>工作台</NavLink><NavLink to="/projects" end><FolderKanban size={18}/>我的项目</NavLink></nav>
       <div className="sidebar-bottom">
-        <div className="version-box"><span className="status-dot"/>应用构建 v0.3.0<p>{meta?.features.mock_auth?'Mock演示 · 请勿输入真实Key或敏感信息':'服务端后台执行'}</p></div>
+        <div className="version-box"><span className="status-dot"/>应用构建 v0.3.0</div>
         {user?<><button className="account" onClick={()=>setMenu(!menu)}><span className="avatar">{user.email[0].toUpperCase()}</span><span className="account-copy">个人账户<small>{user.email}</small></span></button>
           {menu&&<div className="account-menu"><button onClick={()=>{setModelOpen(true);setMenu(false);}}><Settings2 size={16}/>模型配置</button><button onClick={()=>void logout().catch(err=>setError(errorText(err)))}><LogOut size={16}/>退出登录（后台任务继续）</button></div>}</>
           :<NavLink className="secondary" to="/login">登录 / 注册</NavLink>}

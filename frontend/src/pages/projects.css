@@ -1,0 +1,9 @@
+.project-status-filter{position:relative;flex:0 0 auto;width:132px;color:#c7c0d6}
+.project-status-filter select{appearance:none;-webkit-appearance:none;color-scheme:dark;display:block;width:100%;height:40px;padding:0 38px 0 14px;border:1px solid #34313d;border-radius:8px;background:#1b1a22;color:#e4dfee;font-size:12px;font-weight:500;cursor:pointer;transition:border-color .15s,background-color .15s,box-shadow .15s}
+.project-status-filter select:hover{border-color:#685589;background:#24202e}
+.project-status-filter select:focus-visible{outline:2px solid #a897ff;outline-offset:3px;border-color:#8c79ff;box-shadow:0 0 0 3px #7461f420}
+.project-status-filter select option{background:#1b1a22;color:#e4dfee}
+.project-status-filter>svg{position:absolute;right:13px;top:50%;transform:translateY(-50%);pointer-events:none;color:#aaa0bb}
+.projects-page .search-field{min-height:40px}
+.projects-page .list-toolbar>span{white-space:nowrap}
+@media(max-width:560px){.projects-page .search-field{order:3;max-width:none;flex-basis:100%}.projects-page .list-toolbar{gap:12px}}
